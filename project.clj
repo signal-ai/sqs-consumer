@@ -1,6 +1,6 @@
 (defproject sqs-consumer "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
+  :description "Another SQS Library"
+  :url "https://github.com/signal-ai/sqs-consumer"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[amazonica "0.3.139" :exclusions [com.amazonaws/aws-java-sdk]]
