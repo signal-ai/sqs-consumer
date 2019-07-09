@@ -1,4 +1,5 @@
 # SQS Consumer
+[![Clojars Project](https://img.shields.io/clojars/v/sqs-consumer.svg)](https://clojars.org/sqs-consumer)
 
 ## Rationale
 
