@@ -38,6 +38,8 @@ There are a number of dependencies for the `utils` ns, these should be dev depen
 
 ## TODO
  - [ ] deps.edn?
+ - [ ] Don't hard code visibility timeout
+ - [ ] Support being able to extend message timeout
  - [ ] Better documentation
  - [ ] Choose a license?
  - [ ] Tests

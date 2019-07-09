@@ -1,13 +1,14 @@
 (ns sqs-consumer.core
   (:require [amazonica.aws.sqs :as sqs]))
 
-(defn process [queue-url f msg]
+(defn process [{:keys [queue-url aws-config]} f msg]
   (let [{:keys [receipt-handle body]} msg]
     (f {:message-body body
-        :delete-fn #(sqs/delete-message queue-url receipt-handle)})))
+        :delete-fn #(sqs/delete-message aws-config queue-url receipt-handle)})))
 
-(defn dequeue [{:keys [queue-url wait-time-seconds max-number-of-messages]} f]
-  (when-let [msgs (:messages (sqs/receive-message :queue-url queue-url
+(defn dequeue [{:keys [queue-url wait-time-seconds max-number-of-messages aws-config]} f]
+  (when-let [msgs (:messages (sqs/receive-message aws-config
+                                                  :queue-url queue-url
                                                   :wait-time-seconds wait-time-seconds
                                                   :max-number-of-messages max-number-of-messages
                                                   :visibility-timeout 1800))]
@@ -17,9 +18,11 @@
                                  max-number-of-messages
                                  wait-time-seconds
                                  shutdown-wait-time-ms
-                                 process-fn]
+                                 process-fn
+                                 aws-config]
                           :or {shutdown-wait-time-ms 2000
-                               wait-time-seconds 10}
+                               wait-time-seconds 10
+                               aws-config {}}
                           }]
   ;; TODO: validate parameters
   (let [config {
@@ -30,6 +33,7 @@
                 :process-fn process-fn
                 :running (atom false)
                 :finished-shutdown (atom false)
+                :aws-config aws-config
                 }]
     {:config config
      :start-consumer (fn []
@@ -42,7 +46,7 @@
                       ; wait up to specified amount of time for messages in flight to finish processing
                       (loop [shutdown-time shutdown-wait-time-ms]
                         (when (and (not @(:finished-shutdown config)) ; consumer hasn't shutdown gracefully yet
-                                   (pos? shutdown-time))               ; and we can still wait longer
+                                   (pos? shutdown-time))              ; and we can still wait longer
                           (Thread/sleep 100)
                           (recur (- shutdown-time 100))))
                       )}))
