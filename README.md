@@ -37,6 +37,7 @@ There are a number of dependencies for the `utils` ns, these should be dev depen
 ```
 
 ## TODO
+ - [ ] deps.edn?
  - [ ] Better documentation
  - [ ] Choose a license?
  - [ ] Tests
