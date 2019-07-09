@@ -14,7 +14,11 @@
                                                   :visibility-timeout 1800))]
     (doall (pmap (partial process queue-url f) msgs))))
 
+(defn get-queue-url [aws-config name]
+  (:queue-url (sqs/get-queue-url aws-config name)))
+
 (defn create-consumer [& {:keys [queue-url
+                                 queue-name
                                  max-number-of-messages
                                  wait-time-seconds
                                  shutdown-wait-time-ms
@@ -25,7 +29,8 @@
                                aws-config {}}
                           }]
   ;; TODO: validate parameters
-  (let [config {
+  (let [queue-url (or queue-url (get-queue-url aws-config queue-name))
+        config {
                 :queue-url queue-url
                 :max-number-of-messages max-number-of-messages
                 :wait-time-seconds wait-time-seconds
@@ -35,6 +40,8 @@
                 :finished-shutdown (atom false)
                 :aws-config aws-config
                 }]
+    (when (nil? queue-url)
+      (throw (new IllegalArgumentException "Queue URL or Queue Name must be provided")))
     {:config config
      :start-consumer (fn []
                        (reset! (:running config) true)

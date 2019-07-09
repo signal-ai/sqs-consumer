@@ -36,6 +36,10 @@ There are a number of dependencies for the `utils` ns, these should be dev depen
     (start-consumer))
 ```
 
+### Queue URL vs Queue Name
+
+If you pass `queue-url` then `queue-name` will never be used. If you only pass `queue-name` then `queue-url` will be looked up; AWS will throw an exception if a Queue with that name cannot be found. If neither are passed then an `IllegalArgumentException` will be thrown.
+
 ## TODO
  - [ ] deps.edn?
  - [ ] Don't hard code visibility timeout
