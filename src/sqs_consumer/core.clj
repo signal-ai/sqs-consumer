@@ -26,7 +26,7 @@
                                  aws-config]
                           :or {shutdown-wait-time-ms 2000
                                wait-time-seconds 10
-                               aws-config {}}
+                               aws-config {:client-config {}}}
                           }]
   ;; TODO: validate parameters
   (let [queue-url (or queue-url (get-queue-url aws-config queue-name))
