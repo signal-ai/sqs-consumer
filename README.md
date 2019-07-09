@@ -1,4 +1,4 @@
-# sqs-consumer
+# SQS Consumer
 A Clojure library designed to ... well, that part is up to you.
 
 ## Rationale
@@ -38,17 +38,15 @@ There are a number of dependencies for the `utils` ns, these should be dev depen
 
 ## TODO
  - [ ] Better documentation
- - [ ] Choose a license
+ - [ ] Choose a license?
+ - [ ] Tests
  - [ ] metadata from SQS and SNS is lost during the deserialisation, maybe some of that is needed?
  - [ ] Should we be using `pmap` or `map` across message?
- - [ ] Can we lose the dependency on `data.json`
-
-
-FIXME
+ - [ ] Can we lose the dependency on `data.json`?
 
 ## License
 
-Copyright © 2019 FIXME
+Copyright © 2019 Signal AI
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
