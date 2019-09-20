@@ -15,8 +15,8 @@ There are a number of dependencies for the `utils` ns, these should be dev depen
 `utils.clj` contains ring like middleware to take care of some of the common processing you might want to do on a message
 
 ```clj
-(require [signal.nla-article-percolator.queue.core :as queue.core]
-         [signal.nla-article-percolator.queue.utils :as queue.utils])
+(require [sqs-consumer.core :as queue.core]
+         [sqs-consumer.utils :as queue.utils])
 
 (defn create-queue-consumer []
   (queue.core/create-consumer :queue-url "sqs-queue-name"
