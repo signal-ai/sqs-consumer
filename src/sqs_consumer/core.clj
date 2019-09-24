@@ -6,13 +6,13 @@
     (f {:message-body body
         :delete-fn #(sqs/delete-message aws-config queue-url receipt-handle)})))
 
-(defn dequeue [{:keys [queue-url wait-time-seconds max-number-of-messages aws-config]} f]
+(defn dequeue [{:keys [queue-url wait-time-seconds max-number-of-messages aws-config] :as config} f]
   (when-let [msgs (:messages (sqs/receive-message aws-config
                                                   :queue-url queue-url
                                                   :wait-time-seconds wait-time-seconds
                                                   :max-number-of-messages max-number-of-messages
                                                   :visibility-timeout 1800))]
-    (doall (pmap (partial process queue-url f) msgs))))
+    (doall (pmap (partial process config f) msgs))))
 
 (defn get-queue-url [aws-config name]
   (:queue-url (sqs/get-queue-url aws-config name)))
