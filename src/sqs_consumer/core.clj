@@ -6,12 +6,12 @@
     (f {:message-body body
         :delete-fn #(sqs/delete-message aws-config queue-url receipt-handle)})))
 
-(defn dequeue [{:keys [queue-url wait-time-seconds max-number-of-messages aws-config] :as config} f]
+(defn dequeue [{:keys [queue-url wait-time-seconds max-number-of-messages aws-config visibility-timeout] :as config} f]
   (when-let [msgs (:messages (sqs/receive-message aws-config
                                                   :queue-url queue-url
                                                   :wait-time-seconds wait-time-seconds
                                                   :max-number-of-messages max-number-of-messages
-                                                  :visibility-timeout 1800))]
+                                                  :visibility-timeout visibility-timeout))]
     (doall (pmap (partial process config f) msgs))))
 
 (defn get-queue-url [aws-config name]
@@ -23,9 +23,11 @@
                                  wait-time-seconds
                                  shutdown-wait-time-ms
                                  process-fn
-                                 aws-config]
+                                 aws-config
+                                 visibility-timeout]
                           :or {shutdown-wait-time-ms 2000
                                wait-time-seconds 10
+                               visibility-timeout 60
                                aws-config {:client-config {}}}
                           }]
   ;; TODO: validate parameters
@@ -39,6 +41,7 @@
                 :running (atom false)
                 :finished-shutdown (atom false)
                 :aws-config aws-config
+                :visibility-timeout visibility-timeout
                 }]
     (when (nil? queue-url)
       (throw (new IllegalArgumentException "Queue URL or Queue Name must be provided")))
