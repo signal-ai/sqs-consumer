@@ -51,6 +51,19 @@ If you pass `queue-url` then `queue-name` will never be used. If you only pass `
  - [ ] Should we be using `pmap` or `map` across message?
  - [ ] Can we lose the dependency on `data.json`?
 
+
+## Local development
+
+Testing is done inside docker so no Clojure or AWS depencies are required.
+Required tools:
+ - Docker
+ - Docker Compose
+ 
+### Running the tests
+```
+docker-compose build && docker-compose run --rm sqs_consumer lein test
+```
+
 ## License
 
 Copyright © 2019 Signal AI

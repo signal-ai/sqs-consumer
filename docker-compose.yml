@@ -1,0 +1,26 @@
+version: '3.4'
+services:
+  sqs_consumer:
+    build:
+      context: .
+      target: deps
+    command: lein test
+    environment:
+      AWS_DEFAULT_REGION: "eu-west-1"
+      AWS_ACCESS_KEY_ID: "doesnotmatter"
+      AWS_SECRET_ACCESS_KEY: "doesnotmatter"
+    depends_on:
+      - localstack
+  localstack:
+    image: localstack/localstack:0.11.2
+    ports:
+      - "8080:8080"
+      - "4566:4566"
+    environment:
+      HOSTNAME: "${LOCALSTACK_HOSTNAME:-localstack}"
+      HOSTNAME_EXTERNAL: "${LOCALSTACK_HOSTNAME_EXTERNAL:-localstack}"
+      DEFAULT_REGION: "eu-west-1"
+      SERVICES: "s3,sqs,sns"
+      AWS_DEFAULT_REGION: "eu-west-1"
+      AWS_ACCESS_KEY_ID: "doesnotmatter"
+      AWS_SECRET_ACCESS_KEY: "doesnotmatter"
