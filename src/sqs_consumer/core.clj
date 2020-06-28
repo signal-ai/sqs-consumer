@@ -12,7 +12,10 @@
                                                   :wait-time-seconds wait-time-seconds
                                                   :max-number-of-messages max-number-of-messages
                                                   :visibility-timeout visibility-timeout))]
-    (doall (map (partial process config f) msgs))))
+    (if (seq msgs)
+      (f {:config config :messages msgs}))
+    ;;(doall (map (partial process config f) msgs))
+    ))
 
 (defn get-queue-url [aws-config name]
   (:queue-url (sqs/get-queue-url aws-config name)))

@@ -1,5 +1,6 @@
 (ns sqs-consumer.utils
-  (:require [clojure.data.json :as json]))
+  (:require [clojure.data.json :as json]
+            [amazonica.aws.sqs :as sqs]))
 
 (defn add-timestamp [message outer-message]
   "Add timestamp from the SNS metadata if it doesn't already exist"
@@ -26,3 +27,5 @@
       (process-fn message)
       (catch Exception ex
         (error-handler ex)))))
+
+(defn uuid [] (str (java.util.UUID/randomUUID)))

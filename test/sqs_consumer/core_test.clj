@@ -8,8 +8,7 @@
 (def test-queue-name "test-queue")
 
 (defn processing-function [_]
-  (prn "calling function")
-  (throw (Exception. "Not implemented")))
+  (prn "calling function"))
 
 (def aws-config {:endpoint "http://localstack:4566"
                  :client-config {}})
@@ -55,6 +54,7 @@
           consumer (future (start-consumer))]
       (is (not (nil? consumer)))
       (is (nil? (stop-consumer)))
+      (Thread/sleep 2000)
       (is (true? @(:finished-shutdown config)))))
   (testing "can receive a message"
     (td/with-doubles
