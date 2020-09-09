@@ -83,10 +83,10 @@
                                                                batch/batch-process))
             _ (sqs/send-message aws-config
                                 :queue-url (get-queue-url aws-config test-queue-name)
-                                :message-body "hello world")
+                                :message-body "hello world 1")
             _ (sqs/send-message aws-config
                                 :queue-url (get-queue-url aws-config test-queue-name)
-                                :message-body "hello world")
+                                :message-body "hello world 2")
 
             consumer (future (start-consumer))]
         (is (not (nil? consumer)))
@@ -108,16 +108,16 @@
                                                                batch/batch-process))
             _ (sqs/send-message aws-config
                                 :queue-url (get-queue-url aws-config test-queue-name)
-                                :message-body "hello world")
+                                :message-body "hello world 1")
             _ (sqs/send-message aws-config
                                 :queue-url (get-queue-url aws-config test-queue-name)
-                                :message-body "hello world")
+                                :message-body "hello world 2")
 
             consumer (future (start-consumer))]
         (is (not (nil? consumer)))
         (Thread/sleep 100)
         (is (= 1 (-> processing-function td/calls-to count)))
-        (is (= [[["hello world" "hello world"]]] (td/calls-to processing-function)))
+        (is (= [[["hello world 1" "hello world 2"]]] (td/calls-to processing-function)))
         (is (= 0 (-> error-handler td/calls-to count)))
         (is (nil? (stop-consumer)))
         (is (true? @(:finished-shutdown config)))
