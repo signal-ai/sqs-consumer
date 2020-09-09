@@ -5,5 +5,6 @@ jobs:
     docker:
       - image: clojure:lein
     steps:
+      - checkout
       - run: lein uberjar
       - run: lein deploy
