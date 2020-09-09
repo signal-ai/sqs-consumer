@@ -1,7 +1,7 @@
 (ns sqs-consumer.batch-test
   (:require [clojure.test :refer :all]
             [sqs-consumer.batch :as batch]
-            [sqs-consumer.core :refer :all]
+            [sqs-consumer.core :refer [get-queue-url]]
             [amazonica.aws.sqs :as sqs]
             [greenpowermonitor.test-doubles :as td])
   (:import java.io.FileNotFoundException))
@@ -43,12 +43,12 @@
                        (get-queue-url aws-config test-queue-name))))
 
 (defn test-consumer [process]
-  (create-consumer :queue-name test-queue-name
-                   :max-number-of-messages 10
-                   :shutdown-wait-time-ms 1500
-                   :wait-time-seconds 1
-                   :aws-config aws-config
-                   :process-fn process))
+  (batch/create-consumer :queue-name test-queue-name
+                         :max-number-of-messages 10
+                         :shutdown-wait-time-ms 1500
+                         :wait-time-seconds 1
+                         :aws-config aws-config
+                         :process-fn process))
 
 (deftest batch-consumer-test
   (testing "can receive a batch"

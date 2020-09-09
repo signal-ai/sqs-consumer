@@ -1,5 +1,7 @@
 (ns sqs-consumer.sequential
-  (:require [amazonica.aws.sqs :as sqs]))
+  (:require [amazonica.aws.sqs :as sqs]
+            [sqs-consumer.core :as core]
+            [sqs-consumer.utils :as utils]))
 
 (defn delete-message [{:keys [queue-url aws-config]} receipt-handle]
   (sqs/delete-message aws-config queue-url receipt-handle))
@@ -20,9 +22,6 @@
   (fn [{:keys [message]}]
     (process-fn (decoder message))))
 
-(defn with-error-handling [process-fn error-handler]
-  (fn [message]
-    (try
-      (process-fn message)
-      (catch Exception e
-        (error-handler e)))))
+(def with-error-handling utils/with-error-handler)
+;; TODO: this should also wrap `sequential-process`
+(def create-consumer core/create-consumer)

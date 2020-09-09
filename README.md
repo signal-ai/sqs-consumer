@@ -10,21 +10,32 @@ Libraries should tie you into using the fewest number of other libraries as poss
 There are a number of dependencies for the `utils` ns, these should be dev dependencies and only required if you optionally want to use any of the middleware provided in that ns.
 
 ## Usage
-`core.clj` contains everything needed to create, start, and stop and queue consumer. Starting the consumer will run it in the current thread, futures or executors can be used to run it in the background.
+`core.clj` contains the essentials to create, start, and stop and queue consumer. Starting the consumer will run it in the current thread, futures or executors can be used to run it in the background.
+
+`sequential.clj` is a wrapper and middlewares for processing messages sequentially
+
+`batch.clj` is a wrapper and middlewares for processing messages as a single batch
+
+`parallel.clj` TODO
 
 `utils.clj` contains ring like middleware to take care of some of the common processing you might want to do on a message
 
 ```clj
-(require [sqs-consumer.core :as queue.core]
+(require [sqs-consumer.sequential :as queue.sequential]
          [sqs-consumer.utils :as queue.utils])
 
+(defn process [message-body]
+  (prn message-body))
+
 (defn create-queue-consumer []
-  (queue.core/create-consumer :queue-url "sqs-queue-name"
-                              :max-number-of-messages 5
-                              :shutdown-wait-time-ms 2000
-                              :process-fn (-> my-function-to-process-a-message
-                                              (queue.utils/with-message-decoder queue.utils/decode-sns-encoded-json)
-                                              (queue.utils/with-error-handler #(prn % "error processing message")))))
+  (queue.sequential/create-consumer :queue-url "sqs-queue-name"
+                                    :max-number-of-messages 5
+                                    :shutdown-wait-time-ms 2000
+                                    :process-fn (-> process
+                                                    (queue.sequential/with-message-decoder queue.utils/decode-sns-encoded-json)
+                                                    (queue.sequential/with-auto-delete)
+                                                    (queue.sequential/with-error-handler #(prn % "error processing message"))
+                                                    (queue.sequential/sequential-process)))
 
 (let [{:keys [start-consumer
               stop-consumer]} (create-queue-consumer)]
@@ -61,6 +72,7 @@ Required tools:
  
 ### Running the tests
 ```
+docker-compose up -d
 docker-compose build && docker-compose run --rm sqs_consumer lein test
 ```
 

@@ -1,6 +1,6 @@
 (ns sqs-consumer.seq-test
   (:require [clojure.test :refer :all]
-            [sqs-consumer.core :refer :all]
+            [sqs-consumer.core :refer [get-queue-url]]
             [sqs-consumer.sequential :as seq]
             [amazonica.aws.sqs :as sqs]
             [greenpowermonitor.test-doubles :as td])
@@ -30,7 +30,7 @@
                        aws-config
                        :queue-name test-queue-name
                        :attributes
-                       {:VisibilityTimeout 30 ; sec
+                       {:VisibilityTimeout 300 ; sec
                         :MaximumMessageSize 65536 ; bytes
                         :MessageRetentionPeriod 1209600 ; sec
                         :ReceiveMessageWaitTimeSeconds 10})
@@ -40,7 +40,7 @@
                        (get-queue-url aws-config test-queue-name))))
 
 (defn test-consumer [process]
-  (create-consumer :queue-name test-queue-name
+  (seq/create-consumer :queue-name test-queue-name
                    :max-number-of-messages 5
                    :shutdown-wait-time-ms 1500
                    :wait-time-seconds 1

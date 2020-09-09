@@ -1,5 +1,7 @@
 (ns sqs-consumer.batch
-  (:require [amazonica.aws.sqs :as sqs])
+  (:require [amazonica.aws.sqs :as sqs]
+            [sqs-consumer.core :as core]
+            [sqs-consumer.utils :as utils])
   (:import [com.amazonaws.services.sqs.model DeleteMessageBatchRequestEntry]))
 
 (defn delete-batch [{:keys [queue-url aws-config]} messages]
@@ -24,9 +26,6 @@
   (fn [{:keys [messages]}]
     (process-fn (doall (map decoder messages)))))
 
-(defn with-error-handling [process-fn error-handler]
-  (fn [batch]
-    (try
-      (process-fn batch)
-      (catch Exception e
-        (error-handler)))))
+(def with-error-handling utils/with-error-handler)
+;; TODO: this should also wrap `batch-process`
+(def create-consumer core/create-consumer)
