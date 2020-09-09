@@ -1,0 +1,9 @@
+version: 2
+jobs:
+  build:
+    working_directory: /tmp/app
+    docker:
+      - image: clojure:lein
+    steps:
+      - run: lein uberjar
+      - run: lein deploy
