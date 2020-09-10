@@ -1,10 +1,52 @@
-version: 2
+version: 2.1
+
 jobs:
   build:
-    working_directory: /tmp/app
+    parameters:
+      deploy:
+        description: Whether to deploy
+        type: boolean
+        default: True
     docker:
-      - image: clojure:lein
+      - image: circleci/clojure:openjdk-11-lein
     steps:
       - checkout
+
+      - restore_cache:
+          key: v1-deps-lein-{{ checksum "project.clj" }}
+
+      - run:
+          name: Install lein dependencies
+          command: lein deps
+
+      - save_cache:
+          paths:
+              - ~/.m2
+          key: v1-deps-lein-{{ checksum "project.clj" }}
+
       - run: lein uberjar
-      - run: lein deploy
+
+      - when:
+          condition: << parameters.deploy >>
+          steps:
+            - run: lein deploy
+
+workflows:
+  version: 2
+  release:
+    jobs:
+      - build:
+          name: build_only
+          publish: False
+          filters:
+            branches:
+              ignore:
+                - master
+
+      - build:
+          name: build_and_publish
+          publish: True
+          filters:
+            branches:
+              only:
+                - master
