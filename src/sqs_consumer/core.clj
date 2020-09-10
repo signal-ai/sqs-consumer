@@ -1,42 +1,47 @@
 (ns sqs-consumer.core
   (:require [amazonica.aws.sqs :as sqs]))
 
-(defn process [{:keys [queue-url aws-config]} f msg]
-  (let [{:keys [receipt-handle body]} msg]
-    (f {:message-body body
-        :delete-fn #(sqs/delete-message aws-config queue-url receipt-handle)})))
-
 (defn dequeue [{:keys [queue-url wait-time-seconds max-number-of-messages aws-config visibility-timeout] :as config} f]
-  (when-let [msgs (:messages (sqs/receive-message aws-config
-                                                  :queue-url queue-url
-                                                  :wait-time-seconds wait-time-seconds
-                                                  :max-number-of-messages max-number-of-messages
-                                                  :visibility-timeout visibility-timeout))]
-    (if (seq msgs)
-      (f {:config config :messages msgs}))
-    ;;(doall (map (partial process config f) msgs))
-    ))
+  (when-let [msgs (-> (sqs/receive-message aws-config
+                                           :queue-url queue-url
+                                           :wait-time-seconds wait-time-seconds
+                                           :max-number-of-messages max-number-of-messages
+                                           :visibility-timeout visibility-timeout)
+                      :messages
+                      seq)]
+    (f {:config config :messages msgs})))
 
 (defn get-queue-url [aws-config name]
   (:queue-url (sqs/get-queue-url aws-config name)))
 
-(defn create-consumer [& {:keys [queue-url
-                                 queue-name
-                                 max-number-of-messages
-                                 wait-time-seconds
-                                 shutdown-wait-time-ms
-                                 process-fn
-                                 aws-config
-                                 visibility-timeout]
-                          :or {shutdown-wait-time-ms 2000
-                               wait-time-seconds 10
-                               visibility-timeout 60
-                               aws-config {:client-config {}}}
-                          }]
+(defn- default-top-level-error-handler [dequeue-fn]
+  (try
+    (dequeue-fn)
+    (catch Exception e
+      (.printStackTrace e)
+      (Thread/sleep 1000))))
+
+(defn create-consumer
+  "run-dequeue-fn functions that wraps message dequeuing.
+   Defaults to sleeping 1 second on exceptions."
+
+  [& {:keys [queue-url
+             queue-name
+             max-number-of-messages
+             wait-time-seconds
+             shutdown-wait-time-ms
+             process-fn
+             aws-config
+             visibility-timeout
+             run-dequeue-fn]
+      :or {shutdown-wait-time-ms 2000
+           wait-time-seconds 10
+           visibility-timeout 60
+           run-dequeue-fn default-top-level-error-handler
+           aws-config {:client-config {}}}}]
   ;; TODO: validate parameters
   (let [queue-url (or queue-url (get-queue-url aws-config queue-name))
-        config {
-                :queue-url queue-url
+        config {:queue-url queue-url
                 :max-number-of-messages max-number-of-messages
                 :wait-time-seconds wait-time-seconds
                 :shutdown-wait-time-ms shutdown-wait-time-ms
@@ -44,15 +49,15 @@
                 :running (atom false)
                 :finished-shutdown (atom false)
                 :aws-config aws-config
-                :visibility-timeout visibility-timeout
-                }]
+                :visibility-timeout visibility-timeout}]
     (when (nil? queue-url)
       (throw (new IllegalArgumentException "Queue URL or Queue Name must be provided")))
     {:config config
      :start-consumer (fn []
                        (reset! (:running config) true)
                        (while @(:running config)
-                         (dequeue config process-fn))
+                         (run-dequeue-fn
+                          #(dequeue config process-fn)))
                        (reset! (:finished-shutdown config) true))
      :stop-consumer (fn []
                       (reset! (:running config) false)
@@ -61,5 +66,4 @@
                         (when (and (not @(:finished-shutdown config)) ; consumer hasn't shutdown gracefully yet
                                    (pos? shutdown-time))              ; and we can still wait longer
                           (Thread/sleep 100)
-                          (recur (- shutdown-time 100))))
-                      )}))
+                          (recur (- shutdown-time 100)))))}))

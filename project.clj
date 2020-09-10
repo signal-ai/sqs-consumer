@@ -8,9 +8,9 @@
   :profiles {:dev {:dependencies [[org.clojure/clojure "1.8.0"]
                                   [org.clojure/data.json "0.2.6"]
                                   [greenpowermonitor/test-doubles "0.1.2"]]}}
-   :deploy-repositories [["releases" {:url "https://clojars.org/repo"
+  :deploy-repositories [["releases" {:url "https://clojars.org/repo"
+                                     :username :env/clojars_username
+                                     :password :env/clojars_password}]
+                        ["snapshots" {:url "https://clojars.org/repo"
                                       :username :env/clojars_username
-                                      :password :env/clojars_password}]
-                         ["snapshots" {:url "https://clojars.org/repo"
-                                       :username :env/clojars_username
-                                       :password :env/clojars_password}]])
+                                      :password :env/clojars_password}]])
