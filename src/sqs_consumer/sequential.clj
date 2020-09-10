@@ -8,10 +8,9 @@
 
 (defn sequential-process [process-fn]
   (fn [{:keys [config messages]}]
-    (let [{:keys [queue-url aws-config]} config]
-      (run! (fn [message] (process-fn {:message (:body message)
-                                       :delete-message #(delete-message config (:receipt-handle message))}))
-            messages))))
+    (run! (fn [message] (process-fn {:message-body (:body message)
+                                     :delete-message #(delete-message config (:receipt-handle message))}))
+          messages)))
 
 (defn with-auto-delete [process-fn]
   (fn [{:keys [delete-message] :as message}]
