@@ -3,8 +3,8 @@ version: 2.1
 jobs:
   build:
     parameters:
-      deploy:
-        description: Whether to deploy
+      publish:
+        description: Whether to publish
         type: boolean
         default: True
     docker:
@@ -27,7 +27,7 @@ jobs:
       - run: lein uberjar
 
       - when:
-          condition: << parameters.deploy >>
+          condition: << parameters.publish >>
           steps:
             - run: lein deploy
 
