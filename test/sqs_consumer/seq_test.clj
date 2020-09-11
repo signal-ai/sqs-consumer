@@ -41,15 +41,15 @@
 
 (defn test-consumer [process]
   (seq/create-consumer :queue-name test-queue-name
-                   :max-number-of-messages 5
-                   :shutdown-wait-time-ms 1500
-                   :wait-time-seconds 1
-                   :aws-config aws-config
-                   :process-fn process))
+                       :max-number-of-messages 5
+                       :shutdown-wait-time-ms 1500
+                       :wait-time-seconds 1
+                       :aws-config aws-config
+                       :process-fn process))
 
 (defn just-the-body [process-fn]
-  (fn [{:keys [message]}]
-    (process-fn message)))
+  (fn [{:keys [message-body]}]
+    (process-fn message-body)))
 
 (deftest sequential-consumer-test
   (testing "can create the consumer"
@@ -78,8 +78,7 @@
         (is (= [["hello world 1"] ["hello world 2"]] (td/calls-to processing-function)))
         (is (nil? (stop-consumer)))
         (Thread/sleep 100)
-        (is (true? @(:finished-shutdown config)))
-        )))
+        (is (true? @(:finished-shutdown config))))))
 
   (testing "can receive messages with auto-deleting"
     (td/with-doubles
@@ -99,5 +98,4 @@
         (is (= [["hello world 1"] ["hello world 2"]] (td/calls-to processing-function)))
         (is (nil? (stop-consumer)))
         (Thread/sleep 100)
-        (is (true? @(:finished-shutdown config)))
-        ))))
+        (is (true? @(:finished-shutdown config)))))))
