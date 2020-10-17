@@ -19,9 +19,9 @@
 
 (def with-error-handling utils/with-error-handler)
 
-(defn create-consumer [& {:keys [threadpool-size aws-config] :or {threadpool-size 10} :as args}]
+(defn create-consumer [& {:keys [threadpool-size process-fn] :or {threadpool-size 10} :as args}]
   (let [thread-pool (cp/threadpool threadpool-size)
-        consumer (core/create-consumer (merge args {:thread-pool thread-pool}))]
+        consumer (core/create-consumer (merge args {:thread-pool thread-pool :process-fn (parallel-process process-fn)}))]
     (-> consumer
         (update :stop-consumer (fn [stop-fn]
                                  (fn []

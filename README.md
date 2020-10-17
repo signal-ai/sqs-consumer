@@ -34,8 +34,7 @@ There are a number of dependencies for the `utils` ns, these should be dev depen
                                     :process-fn (-> process
                                                     (queue.sequential/with-message-decoder queue.utils/decode-sns-encoded-json)
                                                     (queue.sequential/with-auto-delete)
-                                                    (queue.sequential/with-error-handler #(prn % "error processing message"))
-                                                    (queue.sequential/sequential-process)))
+                                                    (queue.sequential/with-error-handler #(prn % "error processing message")))))
 
 (let [{:keys [start-consumer
               stop-consumer]} (create-queue-consumer)]

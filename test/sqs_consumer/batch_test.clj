@@ -56,8 +56,7 @@
       :spying [processing-function
                error-handler]
       (let [{:keys [config start-consumer stop-consumer]} (test-consumer (-> processing-function
-                                                                             (batch/with-error-handling error-handler)
-                                                                             batch/batch-process))
+                                                                             (batch/with-error-handling error-handler)))
             _ (sqs/send-message aws-config
                                 :queue-url (get-queue-url aws-config test-queue-name)
                                 :message-body "hello world")
@@ -79,8 +78,7 @@
       (let [{:keys [config start-consumer stop-consumer]} (test-consumer
                                                            (-> processing-function
                                                                batch/with-auto-delete
-                                                               (batch/with-error-handling error-handler)
-                                                               batch/batch-process))
+                                                               (batch/with-error-handling error-handler)))
             _ (sqs/send-message aws-config
                                 :queue-url (get-queue-url aws-config test-queue-name)
                                 :message-body "hello world 1")
@@ -104,8 +102,7 @@
                                                            (-> processing-function
                                                                (batch/with-decoder identity)
                                                                batch/with-auto-delete
-                                                               (batch/with-error-handling error-handler)
-                                                               batch/batch-process))
+                                                               (batch/with-error-handling error-handler)))
             _ (sqs/send-message aws-config
                                 :queue-url (get-queue-url aws-config test-queue-name)
                                 :message-body "hello world 1")
@@ -130,8 +127,7 @@
                                                            (-> (fn [batch] (throw (new Exception "testing error handling")))
                                                                (batch/with-decoder identity)
                                                                batch/with-auto-delete
-                                                               (batch/with-error-handling error-handler)
-                                                               batch/batch-process))
+                                                               (batch/with-error-handling error-handler)))
             _ (sqs/send-message aws-config
                                 :queue-url (get-queue-url aws-config test-queue-name)
                                 :message-body "hello world")
@@ -155,8 +151,7 @@
                                                            (-> processing-function
                                                                (batch/with-decoder (fn [_] (throw (new Exception "unable to decode message"))))
                                                                batch/with-auto-delete
-                                                               (batch/with-error-handling error-handler)
-                                                               batch/batch-process))
+                                                               (batch/with-error-handling error-handler)))
             _ (sqs/send-message aws-config
                                 :queue-url (get-queue-url aws-config test-queue-name)
                                 :message-body "hello world")

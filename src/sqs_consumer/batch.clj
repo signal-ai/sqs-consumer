@@ -28,5 +28,5 @@
 
 (def with-error-handling utils/with-error-handler)
 ;; TODO: this should also wrap `batch-process`
-(defn create-consumer [& {:keys [] :as args}]
-  (core/create-consumer args))
+(defn create-consumer [& {:keys [process-fn] :as args}]
+  (core/create-consumer (merge args {:process-fn (batch-process process-fn)})))

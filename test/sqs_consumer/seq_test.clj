@@ -65,8 +65,7 @@
     (td/with-doubles
       :spying [processing-function]
       (let [{:keys [config start-consumer stop-consumer]} (test-consumer (-> processing-function
-                                                                             just-the-body
-                                                                             seq/sequential-process))
+                                                                             just-the-body))
             _ (sqs/send-message aws-config :queue-url (get-queue-url aws-config test-queue-name) :message-body "hello world 1")
             _ (sqs/send-message aws-config :queue-url (get-queue-url aws-config test-queue-name) :message-body "hello world 2")
             consumer (future (start-consumer))]
@@ -84,8 +83,7 @@
       :spying [processing-function]
       (let [{:keys [config start-consumer stop-consumer]} (test-consumer (-> processing-function
                                                                              just-the-body
-                                                                             seq/with-auto-delete
-                                                                             seq/sequential-process))
+                                                                             seq/with-auto-delete))
             _ (sqs/send-message aws-config :queue-url (get-queue-url aws-config test-queue-name) :message-body "hello world 1")
             _ (sqs/send-message aws-config :queue-url (get-queue-url aws-config test-queue-name) :message-body "hello world 2")
             _ (Thread/sleep 100)
