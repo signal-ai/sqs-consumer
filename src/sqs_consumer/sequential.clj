@@ -23,4 +23,5 @@
 
 (def with-error-handling utils/with-error-handler)
 ;; TODO: this should also wrap `sequential-process`
-(def create-consumer core/create-consumer)
+(defn create-consumer [& {:keys [] :as args}]
+  (core/create-consumer args))

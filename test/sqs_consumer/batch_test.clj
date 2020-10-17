@@ -6,7 +6,7 @@
             [greenpowermonitor.test-doubles :as td])
   (:import java.io.FileNotFoundException))
 
-(def test-queue-name "test-queue")
+(def test-queue-name "batch-test-queue")
 
 (defn processing-function [_]
   (prn "calling function")

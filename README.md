@@ -16,7 +16,7 @@ There are a number of dependencies for the `utils` ns, these should be dev depen
 
 `batch.clj` is a wrapper and middlewares for processing messages as a single batch
 
-`parallel.clj` TODO
+`parallel.clj` is a wrapper and middlewares for processing messages in parallel - limited by the number of messages that are dequed at a time
 
 `utils.clj` contains ring like middleware to take care of some of the common processing you might want to do on a message
 
@@ -57,9 +57,9 @@ If you pass `queue-url` then `queue-name` will never be used. If you only pass `
  - [ ] Support being able to extend message timeout
  - [ ] Better documentation
  - [ ] Choose a license?
- - [ ] Tests
+ - [ ] Tests are a bit flaky - sometimes due to timing they fail
  - [ ] metadata from SQS and SNS is lost during the deserialisation, maybe some of that is needed?
- - [ ] Should we be using `pmap` or `map` across message?
+ - [x] Should we be using `pmap` or `map` across message?
  - [ ] Can we lose the dependency on `data.json`?
 
 

@@ -38,12 +38,12 @@
                        (get-queue-url aws-config test-queue-name))))
 
 (defn test-consumer []
-  (create-consumer :queue-name test-queue-name
-                   :max-number-of-messages 5
-                   :shutdown-wait-time-ms 1500
-                   :wait-time-seconds 1
-                   :aws-config aws-config
-                   :process-fn processing-function))
+  (create-consumer {:queue-name test-queue-name
+                    :max-number-of-messages 5
+                    :shutdown-wait-time-ms 1500
+                    :wait-time-seconds 1
+                    :aws-config aws-config
+                    :process-fn processing-function}))
 
 (deftest basic-consumer-test
   (testing "can create the consumer"

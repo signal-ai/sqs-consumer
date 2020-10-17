@@ -25,20 +25,22 @@
   "run-dequeue-fn functions that wraps message dequeuing.
    Defaults to sleeping 1 second on exceptions."
 
-  [& {:keys [queue-url
-             queue-name
-             max-number-of-messages
-             wait-time-seconds
-             shutdown-wait-time-ms
-             process-fn
-             aws-config
-             visibility-timeout
-             run-dequeue-fn]
-      :or {shutdown-wait-time-ms 2000
-           wait-time-seconds 10
-           visibility-timeout 60
-           run-dequeue-fn default-top-level-error-handler
-           aws-config {:client-config {}}}}]
+  [{:keys [queue-url
+           queue-name
+           max-number-of-messages
+           wait-time-seconds
+           shutdown-wait-time-ms
+           process-fn
+           aws-config
+           visibility-timeout
+           run-dequeue-fn
+           thread-pool ; optional. Only present during parallel processing
+           ]
+    :or {shutdown-wait-time-ms 2000
+         wait-time-seconds 10
+         visibility-timeout 60
+         run-dequeue-fn default-top-level-error-handler
+         aws-config {:client-config {}}}}]
   ;; TODO: validate parameters
   (let [queue-url (or queue-url (get-queue-url aws-config queue-name))
         config {:queue-url queue-url
@@ -49,7 +51,8 @@
                 :running (atom false)
                 :finished-shutdown (atom false)
                 :aws-config aws-config
-                :visibility-timeout visibility-timeout}]
+                :visibility-timeout visibility-timeout
+                :thread-pool thread-pool}]
     (when (nil? queue-url)
       (throw (new IllegalArgumentException "Queue URL or Queue Name must be provided")))
     {:config config

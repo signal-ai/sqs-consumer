@@ -1,4 +1,4 @@
-(defproject sqs-consumer "0.1.8-SNAPSHOT"
+(defproject sqs-consumer "0.1.9-SNAPSHOT"
   :description "Another SQS Library"
   :url "https://github.com/signal-ai/sqs-consumer"
   :license {:name "Eclipse Public License"
@@ -7,6 +7,7 @@
                  [com.amazonaws/aws-java-sdk-sqs "1.11.475"]]
   :profiles {:dev {:dependencies [[org.clojure/clojure "1.8.0"]
                                   [org.clojure/data.json "0.2.6"]
+                                  [com.climate/claypoole "1.1.4"]
                                   [greenpowermonitor/test-doubles "0.1.2"]]}}
   :deploy-repositories [["releases" {:url "https://clojars.org/repo"
                                      :username :env/clojars_username

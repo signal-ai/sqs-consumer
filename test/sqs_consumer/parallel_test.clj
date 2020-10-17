@@ -1,12 +1,12 @@
-(ns sqs-consumer.seq-test
+(ns sqs-consumer.parallel-test
   (:require [clojure.test :refer :all]
             [sqs-consumer.core :refer [get-queue-url]]
-            [sqs-consumer.sequential :as seq]
+            [sqs-consumer.parallel :as parallel]
             [amazonica.aws.sqs :as sqs]
             [greenpowermonitor.test-doubles :as td])
   (:import java.io.FileNotFoundException))
 
-(def test-queue-name "seq-test-queue")
+(def test-queue-name "parallel-test-queue")
 
 (defn processing-function [a]
   (prn "calling function"))
@@ -39,7 +39,7 @@
                        (get-queue-url aws-config test-queue-name))))
 
 (defn test-consumer [process]
-  (seq/create-consumer :queue-name test-queue-name
+  (parallel/create-consumer :queue-name test-queue-name
                        :max-number-of-messages 5
                        :shutdown-wait-time-ms 1500
                        :wait-time-seconds 1
@@ -66,7 +66,7 @@
       :spying [processing-function]
       (let [{:keys [config start-consumer stop-consumer]} (test-consumer (-> processing-function
                                                                              just-the-body
-                                                                             seq/sequential-process))
+                                                                             parallel/parallel-process))
             _ (sqs/send-message aws-config :queue-url (get-queue-url aws-config test-queue-name) :message-body "hello world 1")
             _ (sqs/send-message aws-config :queue-url (get-queue-url aws-config test-queue-name) :message-body "hello world 2")
             consumer (future (start-consumer))]
@@ -84,8 +84,8 @@
       :spying [processing-function]
       (let [{:keys [config start-consumer stop-consumer]} (test-consumer (-> processing-function
                                                                              just-the-body
-                                                                             seq/with-auto-delete
-                                                                             seq/sequential-process))
+                                                                             parallel/with-auto-delete
+                                                                             parallel/parallel-process))
             _ (sqs/send-message aws-config :queue-url (get-queue-url aws-config test-queue-name) :message-body "hello world 1")
             _ (sqs/send-message aws-config :queue-url (get-queue-url aws-config test-queue-name) :message-body "hello world 2")
             _ (Thread/sleep 100)
@@ -98,3 +98,5 @@
         (is (nil? (stop-consumer)))
         (Thread/sleep 100)
         (is (true? @(:finished-shutdown config)))))))
+
+
