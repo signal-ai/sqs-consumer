@@ -10,15 +10,25 @@ Libraries should tie you into using the fewest number of other libraries as poss
 There are a number of dependencies for the `utils` ns, these should be dev dependencies and only required if you optionally want to use any of the middleware provided in that ns.
 
 ## Usage
-`core.clj` contains the essentials to create, start, and stop and queue consumer. Starting the consumer will run it in the current thread, futures or executors can be used to run it in the background.
 
 `sequential.clj` is a wrapper and middlewares for processing messages sequentially
 
 `batch.clj` is a wrapper and middlewares for processing messages as a single batch
 
-`parallel.clj` is a wrapper and middlewares for processing messages in parallel - limited by the number of messages that are dequed at a time
+`parallel.clj` is a wrapper and middlewares for processing messages in parallel - limited by the number of messages that are dequed at a time.
 
 `utils.clj` contains ring like middleware to take care of some of the common processing you might want to do on a message
+
+### Dependencies
+Both the `utils` and `parallel` have transitive dependencies that are *not* bundled with this library. If you don't need them, don't declare the dependencies. Be sure to include these dependencies when you do use them:
+```clj
+[org.clojure/data.json "0.2.6"] ;; required by utils
+[com.climate/claypoole "1.1.4"] ;; required by parallel
+```
+
+Some common usage patterns, the usage should be fairly similar:
+
+### Sequential processing
 
 ```clj
 (require [sqs-consumer.sequential :as queue.sequential]
@@ -45,6 +55,66 @@ There are a number of dependencies for the `utils` ns, these should be dev depen
     (log/info "listening for messages...")
     (start-consumer))
 ```
+
+### Batch processing
+
+```clj
+(require [sqs-consumer.batch :as queue.batch]
+         [sqs-consumer.utils :as queue.utils])
+
+(defn process [message-batch]
+  (prn (count message-batch))
+
+(defn create-queue-consumer []
+  (queue.batch/create-consumer :queue-url "sqs-queue-name"
+                               :max-number-of-messages 10
+                               :shutdown-wait-time-ms 2000
+                               :process-fn (-> process
+                                               (queue.batch/with-message-decoder queue.utils/decode-sns-encoded-json)
+                                               (queue.batch/with-auto-delete)
+                                               (queue.batch/with-error-handler #(prn % "error processing messages")))))
+
+(let [{:keys [start-consumer
+              stop-consumer]} (create-queue-consumer)]
+    (.addShutdownHook (Runtime/getRuntime)
+                      (Thread. (fn []
+                                 (log/info "shutting down")
+                                 (stop-consumer))))
+    (log/info "listening for messages...")
+    (start-consumer))
+```
+
+
+### Parallel processing
+Under the hood messages here are processed using Claypoole's `upmap` which is un-ordered and in parallel. If you're using a FIFO queue where order is guaranteed, this will likely break that guarantee.
+
+```clj
+(require [sqs-consumer.parallel :as queue.parallel]
+         [sqs-consumer.utils :as queue.utils])
+
+(defn process [message-batch]
+  (prn (count message-batch))
+
+(defn create-queue-consumer []
+  (queue.parallel/create-consumer :queue-url "sqs-queue-name"
+                                  :max-number-of-messages 10
+                                  :threadpool-size 3 ;;defaults to 10
+                                  :shutdown-wait-time-ms 2000
+                                  :process-fn (-> process
+                                                  (queue.parallel/with-message-decoder queue.utils/decode-sns-encoded-json)
+                                                  (queue.parallel/with-auto-delete)
+                                                  (queue.parallel/with-error-handler #(prn % "error processing messages")))))
+
+(let [{:keys [start-consumer
+              stop-consumer]} (create-queue-consumer)]
+    (.addShutdownHook (Runtime/getRuntime)
+                      (Thread. (fn []
+                                 (log/info "shutting down")
+                                 (stop-consumer))))
+    (log/info "listening for messages...")
+    (start-consumer))
+```
+
 
 ### Queue URL vs Queue Name
 
