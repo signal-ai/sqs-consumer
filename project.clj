@@ -1,4 +1,4 @@
-(defproject sqs-consumer "0.2.1-SNAPSHOT"
+(defproject signal-ai/sqs-consumer "0.2.1-SNAPSHOT"
   :description "Another SQS Library"
   :url "https://github.com/signal-ai/sqs-consumer"
   :license {:name "Eclipse Public License"

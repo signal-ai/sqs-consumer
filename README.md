@@ -1,5 +1,5 @@
 # SQS Consumer
-[![Clojars Project](https://img.shields.io/clojars/v/sqs-consumer.svg)](https://clojars.org/sqs-consumer)
+[![Clojars Project](https://img.shields.io/clojars/v/signal-ai/sqs-consumer.svg)](https://clojars.org/signal-ai/sqs-consumer)
 
 ## Rationale
 
