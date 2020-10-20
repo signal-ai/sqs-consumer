@@ -67,7 +67,7 @@ Some common usage patterns, the usage should be fairly similar:
 
 (defn create-queue-consumer []
   (queue.batch/create-consumer :queue-url "sqs-queue-name"
-                               :max-number-of-messages 10
+                               :max-number-of-messages 10 ;; this effectively becomes the maximum batch size
                                :shutdown-wait-time-ms 2000
                                :process-fn (-> process
                                                (queue.batch/with-message-decoder queue.utils/decode-sns-encoded-json)
@@ -98,7 +98,7 @@ Under the hood messages here are processed using Claypoole's `upmap` which is un
 (defn create-queue-consumer []
   (queue.parallel/create-consumer :queue-url "sqs-queue-name"
                                   :max-number-of-messages 10
-                                  :threadpool-size 3 ;;defaults to 10
+                                  :threadpool-size 3 ;; defaults to 10. Should be smaller than the number of messages that are dequeued from SQS. More will just mean un-used threads
                                   :shutdown-wait-time-ms 2000
                                   :process-fn (-> process
                                                   (queue.parallel/with-message-decoder queue.utils/decode-sns-encoded-json)
