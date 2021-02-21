@@ -1,4 +1,5 @@
 version: '3.4'
+
 services:
   sqs_consumer:
     build:
@@ -11,6 +12,7 @@ services:
       AWS_SECRET_ACCESS_KEY: "doesnotmatter"
     depends_on:
       - localstack
+
   localstack:
     image: localstack/localstack:0.11.2
     ports:

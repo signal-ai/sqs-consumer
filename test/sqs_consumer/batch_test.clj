@@ -1,5 +1,5 @@
 (ns sqs-consumer.batch-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [sqs-consumer.batch :as batch]
             [sqs-consumer.core :refer [get-queue-url]]
             [amazonica.aws.sqs :as sqs]
@@ -12,7 +12,7 @@
   (prn "calling function")
   true)
 
-(defn error-handler [e]
+(defn test-error-handler [e]
   (prn e))
 
 (def aws-config {:endpoint "http://localstack:4566"
@@ -54,9 +54,9 @@
   (testing "can receive a batch"
     (td/with-doubles
       :spying [processing-function
-               error-handler]
+               test-error-handler]
       (let [{:keys [config start-consumer stop-consumer]} (test-consumer (-> processing-function
-                                                                             (batch/with-error-handling error-handler)))
+                                                                             (batch/with-error-handling test-error-handler)))
             _ (sqs/send-message aws-config
                                 :queue-url (get-queue-url aws-config test-queue-name)
                                 :message-body "hello world")
@@ -68,17 +68,16 @@
         (Thread/sleep 1000)
         (is (nil? (stop-consumer)))
         (is (= 1 (-> processing-function td/calls-to count)))
-        (is (= 0 (-> error-handler td/calls-to count)))
-        (is (true? @(:finished-shutdown config)))
-        )))
+        (is (= 0 (-> test-error-handler td/calls-to count)))
+        (is (true? @(:finished-shutdown config))))))
   (testing "can receive a batch with auto deleting"
     (td/with-doubles
       :spying [processing-function
-               error-handler]
+               test-error-handler]
       (let [{:keys [config start-consumer stop-consumer]} (test-consumer
                                                            (-> processing-function
                                                                batch/with-auto-delete
-                                                               (batch/with-error-handling error-handler)))
+                                                               (batch/with-error-handling test-error-handler)))
             _ (sqs/send-message aws-config
                                 :queue-url (get-queue-url aws-config test-queue-name)
                                 :message-body "hello world 1")
@@ -90,19 +89,18 @@
         (is (not (nil? consumer)))
         (Thread/sleep 100)
         (is (= 1 (-> processing-function td/calls-to count)))
-        (is (= 0 (-> error-handler td/calls-to count)))
+        (is (= 0 (-> test-error-handler td/calls-to count)))
         (is (nil? (stop-consumer)))
-        (is (true? @(:finished-shutdown config)))
-        )))
+        (is (true? @(:finished-shutdown config))))))
   (testing "can receive a batch with decoding"
     (td/with-doubles
       :spying [processing-function
-               error-handler]
+               test-error-handler]
       (let [{:keys [config start-consumer stop-consumer]} (test-consumer
                                                            (-> processing-function
                                                                (batch/with-decoder identity)
                                                                batch/with-auto-delete
-                                                               (batch/with-error-handling error-handler)))
+                                                               (batch/with-error-handling test-error-handler)))
             _ (sqs/send-message aws-config
                                 :queue-url (get-queue-url aws-config test-queue-name)
                                 :message-body "hello world 1")
@@ -115,19 +113,18 @@
         (Thread/sleep 100)
         (is (= 1 (-> processing-function td/calls-to count)))
         (is (= [[["hello world 1" "hello world 2"]]] (td/calls-to processing-function)))
-        (is (= 0 (-> error-handler td/calls-to count)))
+        (is (= 0 (-> test-error-handler td/calls-to count)))
         (is (nil? (stop-consumer)))
-        (is (true? @(:finished-shutdown config)))
-        )))
+        (is (true? @(:finished-shutdown config))))))
   (testing "will call the error handler when the processor errors"
     (td/with-doubles
       :spying [processing-function
-               error-handler]
+               test-error-handler]
       (let [{:keys [config start-consumer stop-consumer]} (test-consumer
                                                            (-> (fn [batch] (throw (new Exception "testing error handling")))
                                                                (batch/with-decoder identity)
                                                                batch/with-auto-delete
-                                                               (batch/with-error-handling error-handler)))
+                                                               (batch/with-error-handling test-error-handler)))
             _ (sqs/send-message aws-config
                                 :queue-url (get-queue-url aws-config test-queue-name)
                                 :message-body "hello world")
@@ -139,19 +136,18 @@
         (is (not (nil? consumer)))
         (Thread/sleep 100)
         (is (= 0 (-> processing-function td/calls-to count)))
-        (is (= 1 (-> error-handler td/calls-to count)))
+        (is (= 1 (-> test-error-handler td/calls-to count)))
         (is (nil? (stop-consumer)))
-        (is (true? @(:finished-shutdown config)))
-        )))
+        (is (true? @(:finished-shutdown config))))))
   (testing "will call the error handler when the decoder errors"
     (td/with-doubles
       :spying [processing-function
-               error-handler]
+               test-error-handler]
       (let [{:keys [config start-consumer stop-consumer]} (test-consumer
                                                            (-> processing-function
                                                                (batch/with-decoder (fn [_] (throw (new Exception "unable to decode message"))))
                                                                batch/with-auto-delete
-                                                               (batch/with-error-handling error-handler)))
+                                                               (batch/with-error-handling test-error-handler)))
             _ (sqs/send-message aws-config
                                 :queue-url (get-queue-url aws-config test-queue-name)
                                 :message-body "hello world")
@@ -163,7 +159,6 @@
         (is (not (nil? consumer)))
         (Thread/sleep 100)
         (is (= 0 (-> processing-function td/calls-to count)))
-        (is (= 1 (-> error-handler td/calls-to count)))
+        (is (= 1 (-> test-error-handler td/calls-to count)))
         (is (nil? (stop-consumer)))
-        (is (true? @(:finished-shutdown config)))
-        ))))
+        (is (true? @(:finished-shutdown config)))))))

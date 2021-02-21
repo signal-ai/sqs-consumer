@@ -1,5 +1,5 @@
 (ns sqs-consumer.parallel-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [sqs-consumer.core :refer [get-queue-url]]
             [sqs-consumer.parallel :as parallel]
             [amazonica.aws.sqs :as sqs]
@@ -8,7 +8,7 @@
 
 (def test-queue-name "parallel-test-queue")
 
-(defn processing-function [a]
+(defn processing-function [_]
   (prn "calling function"))
 
 (def aws-config {:endpoint "http://localstack:4566"
@@ -40,11 +40,11 @@
 
 (defn test-consumer [process]
   (parallel/create-consumer :queue-name test-queue-name
-                       :max-number-of-messages 5
-                       :shutdown-wait-time-ms 1500
-                       :wait-time-seconds 1
-                       :aws-config aws-config
-                       :process-fn process))
+                            :max-number-of-messages 5
+                            :shutdown-wait-time-ms 1500
+                            :wait-time-seconds 1
+                            :aws-config aws-config
+                            :process-fn process))
 
 (defn just-the-body [process-fn]
   (fn [{:keys [message-body]}]
@@ -52,7 +52,7 @@
 
 (deftest sequential-consumer-test
   (testing "can create the consumer"
-    (let [{:keys [start-consumer stop-consumer]} (test-consumer processing-function)]
+    (let [{:keys [start-consumer]} (test-consumer processing-function)]
       (is (not (nil? start-consumer)))))
   (testing "can start the consumer"
     (let [{:keys [config start-consumer stop-consumer]} (test-consumer processing-function)
@@ -96,5 +96,3 @@
         (is (nil? (stop-consumer)))
         (Thread/sleep 100)
         (is (true? @(:finished-shutdown config)))))))
-
-

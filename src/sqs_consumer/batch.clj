@@ -1,8 +1,7 @@
 (ns sqs-consumer.batch
   (:require [amazonica.aws.sqs :as sqs]
             [sqs-consumer.core :as core]
-            [sqs-consumer.utils :as utils])
-  (:import [com.amazonaws.services.sqs.model DeleteMessageBatchRequestEntry]))
+            [sqs-consumer.utils :as utils]))
 
 (defn delete-batch [{:keys [queue-url aws-config]} messages]
   (sqs/delete-message-batch
@@ -12,10 +11,9 @@
 
 (defn batch-process [process-fn]
   (fn [{:keys [config messages]}]
-    (let [{:keys [queue-url aws-config]} config]
-      (process-fn {:messages (map :body messages)
-                   :delete-messages #(delete-batch config messages)
-                   :change-message-visibility (fn [visibility])}))))
+    (process-fn {:messages (map :body messages)
+                 :delete-messages #(delete-batch config messages)
+                 :change-message-visibility (fn [_])})))
 
 (defn with-auto-delete [process-fn]
   (fn [{:keys [delete-messages] :as batch}]

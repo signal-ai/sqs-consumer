@@ -11,7 +11,7 @@
 
 (defn- lazy-load-data-json []
   (try
-    (lreq/with-lazy-require '[clojure.data.json :as json]
+    (lreq/with-lazy-require [[clojure.data.json :as json]]
       #(clojure.data.json/read-str % :key-fn keyword))
     (catch Throwable e
       (log/error e "decoder called with no json-fn and without clojure.data.json on the classpath. Please either add clojure.data.json or provide a json-fn.")
@@ -30,7 +30,6 @@
            (add-timestamp outer-message)))))
   ([]
    (decode-sns-encoded-json (lazy-load-data-json))))
-
 
 (defn decode-sqs-encoded-json
   "Returns a decoder which internal message in-place.
@@ -51,17 +50,18 @@
   
    If no json-fn is provided, will load clojure.data.json."
   ([json-fn]
-   (let [decode-sns (decode-sns-encoded-json json-fn)
-         decode-sqs (decode-sqs-encoded-json json-fn)]
-     (fn [message-body]
+   (fn [message-body]
+     (let [outer-message (json-fn message-body)]
        (cond
-         (contains? message-body :Type) (do (log/debug "Decoding message from SQS")
-                                            (-> (decode-sqs)
-                                                (assoc-in [:sqs-consumer/metadata :message-envelope] :sqs)))
-         :else (do (log/debug "Decoding message from SNS" :sns-message-id (:MessageId message-body))
-                   (-> message-body
-                       (decode-sns)
-                       (assoc-in [:sqs-consumer/metadata :message-envelope] :sns)))))))
+         (contains? outer-message :Type) (do (log/debug "Decoding message from SNS" :sns-message-id (:MessageId outer-message))
+                                             (-> outer-message
+                                                 :Message
+                                                 (json-fn)
+                                                 (add-timestamp outer-message)
+                                                 (assoc-in [:sqs-consumer/metadata :message-envelope] :sns)))
+         :else (do (log/debug "Decoding message from SQS")
+                   (-> outer-message
+                       (assoc-in [:sqs-consumer/metadata :message-envelope] :sqs)))))))
   ([]
    (auto-decode-json-message (lazy-load-data-json))))
 

@@ -1,5 +1,5 @@
 (ns sqs-consumer.seq-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [sqs-consumer.core :refer [get-queue-url]]
             [sqs-consumer.sequential :as seq]
             [amazonica.aws.sqs :as sqs]
@@ -8,7 +8,7 @@
 
 (def test-queue-name "seq-test-queue")
 
-(defn processing-function [a]
+(defn processing-function [_]
   (prn "calling function"))
 
 (def aws-config {:endpoint "http://localstack:4566"
@@ -52,7 +52,7 @@
 
 (deftest sequential-consumer-test
   (testing "can create the consumer"
-    (let [{:keys [start-consumer stop-consumer]} (test-consumer processing-function)]
+    (let [{:keys [start-consumer]} (test-consumer processing-function)]
       (is (not (nil? start-consumer)))))
   (testing "can start the consumer"
     (let [{:keys [config start-consumer stop-consumer]} (test-consumer processing-function)

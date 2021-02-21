@@ -54,7 +54,7 @@
                 :visibility-timeout visibility-timeout
                 :thread-pool thread-pool}]
     (when (nil? queue-url)
-      (throw (new IllegalArgumentException "Queue URL or Queue Name must be provided")))
+      (throw (new IllegalArgumentException "Queue URL (:queue-url) or Queue Name (:queue-name) must be provided")))
     {:config config
      :start-consumer (fn []
                        (reset! (:running config) true)
@@ -69,4 +69,5 @@
                         (when (and (not @(:finished-shutdown config)) ; consumer hasn't shutdown gracefully yet
                                    (pos? shutdown-time))              ; and we can still wait longer
                           (Thread/sleep 100)
-                          (recur (- shutdown-time 100)))))}))
+                          (recur (- shutdown-time 100)))))
+     :running (fn [] (and (not @(:running config)) @(:finished-shutdown config)))}))

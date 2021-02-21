@@ -1,13 +1,13 @@
 (ns sqs-consumer.core-test
-  (:require [clojure.test :refer :all]
-            [sqs-consumer.core :refer :all]
+  (:require [clojure.test :refer [deftest is testing use-fixtures]]
+            [sqs-consumer.core :refer [create-consumer get-queue-url]]
             [amazonica.aws.sqs :as sqs]
             [greenpowermonitor.test-doubles :as td])
   (:import java.io.FileNotFoundException))
 
 (def test-queue-name "test-queue")
 
-(defn processing-function [a]
+(defn processing-function [_]
   (prn "calling function"))
 
 (def aws-config {:endpoint "http://localstack:4566"
@@ -47,7 +47,7 @@
 
 (deftest basic-consumer-test
   (testing "can create the consumer"
-    (let [{:keys [start-consumer stop-consumer]} (test-consumer)]
+    (let [{:keys [start-consumer]} (test-consumer)]
       (is (not (nil? start-consumer)))))
   (testing "can start the consumer"
     (let [{:keys [config start-consumer stop-consumer]} (test-consumer)
@@ -68,5 +68,4 @@
         ;; expect here that we get a batch of messages as we don't fan out
         (is (= 1 (-> processing-function td/calls-to count)))
         (is (nil? (stop-consumer)))
-        (is (true? @(:finished-shutdown config)))
-        ))))
+        (is (true? @(:finished-shutdown config)))))))

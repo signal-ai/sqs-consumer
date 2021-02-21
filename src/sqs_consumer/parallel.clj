@@ -1,6 +1,5 @@
 (ns sqs-consumer.parallel
-  (:require [amazonica.aws.sqs :as sqs]
-            [com.climate.claypoole :as cp]
+  (:require [com.climate.claypoole :as cp]
             [sqs-consumer.core :as core]
             [sqs-consumer.utils :as utils]
             [sqs-consumer.sequential :as sequential]))
