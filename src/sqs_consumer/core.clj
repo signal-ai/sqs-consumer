@@ -4,9 +4,11 @@
 
 (set! *warn-on-reflection* true)
 
-(defn dequeue [{:keys [queue-url wait-time-seconds max-number-of-messages aws-config visibility-timeout] :as config} f]
+(defn dequeue [{:keys [attribute-names message-attribute-names queue-url wait-time-seconds max-number-of-messages aws-config visibility-timeout] :as config} f]
   (when-let [msgs (-> (sqs/receive-message aws-config
                                            :queue-url queue-url
+                                           :attribute-names attribute-names
+                                           :message-attribute-names message-attribute-names
                                            :wait-time-seconds wait-time-seconds
                                            :max-number-of-messages max-number-of-messages
                                            :visibility-timeout visibility-timeout)
@@ -39,6 +41,8 @@
    Defaults to sleeping 1 second on exceptions."
   [{:keys [queue-url
            queue-name
+           attribute-names
+           message-attribute-names
            max-number-of-messages
            wait-time-seconds
            shutdown-wait-time-ms
@@ -48,7 +52,9 @@
            run-dequeue-fn
            thread-pool ; optional. Only present during parallel processing
            ]
-    :or {shutdown-wait-time-ms 2000
+    :or {attribute-names ["All"]
+         message-attribute-names ["All"]
+         shutdown-wait-time-ms 2000
          wait-time-seconds 10
          visibility-timeout 60
          run-dequeue-fn default-top-level-error-handler
@@ -56,6 +62,8 @@
   ;; TODO: validate parameters
   (let [queue-url (or queue-url (get-queue-url aws-config queue-name))
         config {:queue-url queue-url
+                :attribute-names attribute-names
+                :message-attribute-names message-attribute-names
                 :max-number-of-messages max-number-of-messages
                 :wait-time-seconds wait-time-seconds
                 :shutdown-wait-time-ms shutdown-wait-time-ms
