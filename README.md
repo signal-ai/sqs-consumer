@@ -25,7 +25,7 @@ There are a number of dependencies for the `utils` ns, these should be dev depen
 Both the `utils` and `parallel` have transitive dependencies that are _not_ bundled with this library. If you don't need them, don't declare the dependencies. Be sure to include these dependencies when you do use them:
 
 ```clj
-[org.clojure/data.json "0.2.6"] ;; required by utils
+[org.clojure/data.json "0.2.6"] ;; required by no-args calls to json decoders in utils
 [com.climate/claypoole "1.1.4"] ;; required by parallel
 ```
 
@@ -45,7 +45,7 @@ Some common usage patterns, the usage should be fairly similar:
                                     :max-number-of-messages 5
                                     :shutdown-wait-time-ms 2000
                                     :process-fn (-> process
-                                                    (queue.sequential/with-decoder queue.utils/decode-sns-encoded-json)
+                                                    (queue.sequential/with-decoder (queue.utils/auto-decode-json-message))
                                                     (queue.sequential/with-auto-delete)
                                                     (queue.sequential/with-error-handling #(prn % "error processing message")))))
 
@@ -73,7 +73,7 @@ Some common usage patterns, the usage should be fairly similar:
                                :max-number-of-messages 10 ;; this effectively becomes the maximum batch size
                                :shutdown-wait-time-ms 2000
                                :process-fn (-> process
-                                               (queue.batch/with-decoder queue.utils/decode-sns-encoded-json)
+                                               (queue.batch/with-decoder (queue.utils/auto-decode-json-message))
                                                (queue.batch/with-auto-delete)
                                                (queue.batch/with-error-handling #(prn % "error processing messages")))))
 
@@ -104,7 +104,7 @@ Under the hood messages here are processed using Claypoole's `upmap` which is un
                                   :threadpool-size 3 ;; defaults to 10. Should be smaller than the number of messages that are dequeued from SQS. More will just mean un-used threads
                                   :shutdown-wait-time-ms 2000
                                   :process-fn (-> process
-                                                  (queue.parallel/with-decoder queue.utils/decode-sns-encoded-json)
+                                                  (queue.parallel/with-decoder (queue.utils/auto-decode-json-message))
                                                   (queue.parallel/with-auto-delete)
                                                   (queue.parallel/with-error-handling #(prn % "error processing messages")))))
 
@@ -131,8 +131,6 @@ If you pass `queue-url` then `queue-name` will never be used. If you only pass `
 -   [ ] Choose a license?
 -   [ ] Tests are a bit flaky - sometimes due to timing they fail
 -   [ ] metadata from SQS and SNS is lost during the deserialisation, maybe some of that is needed?
--   [x] Should we be using `pmap` or `map` across message?
--   [ ] Can we lose the dependency on `data.json`?
 
 ## Local development
 
