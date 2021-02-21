@@ -1,5 +1,8 @@
 (ns sqs-consumer.core
-  (:require [amazonica.aws.sqs :as sqs]))
+  (:require [amazonica.aws.sqs :as sqs]
+            [clojure.tools.logging :as log]))
+
+(set! *warn-on-reflection* true)
 
 (defn dequeue [{:keys [queue-url wait-time-seconds max-number-of-messages aws-config visibility-timeout] :as config} f]
   (when-let [msgs (-> (sqs/receive-message aws-config
@@ -18,13 +21,22 @@
   (try
     (dequeue-fn)
     (catch Exception e
-      (.printStackTrace e)
+      (log/error e "Failed to receive message from SQS queue")
       (Thread/sleep 1000))))
+
+(defn parse-message-attributes
+  "Resolves message attributes into a map.
+   SQS message attributes are a hash-map of Key: {:Type ... :Value ...}, see https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-message-metadata.html#sqs-message-attributes
+   Note: SQS message attributes will only be set on the received message directly if the message is either
+      1. Published to SNS directly
+      2. Received from an SNS topic with RawMessageDelivery set to true (https://docs.aws.amazon.com/sns/latest/dg/sns-large-payload-raw-message-delivery.html)"
+  [message-attributes]
+  (reduce (fn [attributes [key {value :Value}]] (assoc attributes key value)) {} message-attributes))
+
 
 (defn create-consumer
   "run-dequeue-fn functions that wraps message dequeuing.
    Defaults to sleeping 1 second on exceptions."
-
   [{:keys [queue-url
            queue-name
            max-number-of-messages

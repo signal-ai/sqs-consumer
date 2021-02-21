@@ -1,13 +1,16 @@
 (ns sqs-consumer.utils
   (:require [clojure.tools.logging :as log]
-            [lazy-require.core :as lreq]))
+            [lazy-require.core :as lreq]
+            [sqs-consumer.core :as core]))
 
-(defn add-timestamp
+(set! *warn-on-reflection* true)
+
+(defn- add-timestamp
   "Add timestamp from the SNS metadata if it doesn't already exist."
-  [message outer-message]
-  (if (:timestamp message)
-    message
-    (assoc message :timestamp (:Timestamp outer-message))))
+  [message-body outer-message]
+  (if (:timestamp message-body)
+    message-body
+    (assoc message-body :timestamp (:Timestamp outer-message))))
 
 (defn- lazy-load-data-json []
   (try
@@ -18,30 +21,38 @@
       (throw e))))
 
 (defn decode-sns-encoded-json
-  "Returns a decoder which decodes the external SNS message and the internal \"Message\" property on the message in-place.
+  "Returns a decoder which decodes the external SNS message and the internal \"Message\" property on the message, as well as parsing any message attributes
+   which may be in the message body.
+
+   Not required if RawMessageDelivery is true on the SNS topic.
    
    If no json-fn is provided, will load clojure.data.json."
   ([json-fn]
-   (fn [message-body]
-     (let [outer-message (json-fn message-body)]
-       (-> outer-message
-           :Message
-           (json-fn)
-           (add-timestamp outer-message)))))
+   (fn [message]
+     (let [;; we may have already decoded this if wrapped with auto-decode-json-message
+           outer-message (if (string? message) (json-fn message) message)]
+       {:message-body (-> outer-message
+                          :Message
+                          (json-fn)
+                          (add-timestamp outer-message))
+        :message-attributes (->> outer-message
+                                 :MessageAttributes
+                                 (core/parse-message-attributes))
+        :sqs-consumer/metadata {:message-envelope :sns}})))
   ([]
    (decode-sns-encoded-json (lazy-load-data-json))))
 
 (defn decode-sqs-encoded-json
-  "Returns a decoder which internal message in-place.
+  "Returns a decoder which decodes the sqs message as json.
    
    If no json-fn is provided, will load clojure.data.json."
   ([json-fn]
-   (fn [message-body]
-     (-> message-body
-         :Message
-         (json-fn))))
+   (fn [message]
+     {;; we may have already decoded this if wrapped with auto-decode-json-message
+      :message-body (if (string? message) (json-fn message) message)
+      :sqs-consumer/metadata {:message-envelope :sqs}}))
   ([]
-   (decode-sns-encoded-json (lazy-load-data-json))))
+   (decode-sqs-encoded-json (lazy-load-data-json))))
 
 (defn auto-decode-json-message
   "Returns a decoder determines whether the message was from SQS or SNS and decodes the message appropriately.
@@ -50,36 +61,21 @@
   
    If no json-fn is provided, will load clojure.data.json."
   ([json-fn]
-   (fn [message-body]
-     (let [outer-message (json-fn message-body)]
-       (cond
-         (contains? outer-message :Type) (do (log/debug "Decoding message from SNS" :sns-message-id (:MessageId outer-message))
-                                             (-> outer-message
-                                                 :Message
-                                                 (json-fn)
-                                                 (add-timestamp outer-message)
-                                                 (assoc-in [:sqs-consumer/metadata :message-envelope] :sns)))
-         :else (do (log/debug "Decoding message from SQS")
-                   (-> outer-message
-                       (assoc-in [:sqs-consumer/metadata :message-envelope] :sqs)))))))
+   (let [parse-sns-message (decode-sns-encoded-json json-fn)
+         parse-sqs-message (decode-sqs-encoded-json json-fn)]
+     (fn [message]
+       (let [outer-message (json-fn message)
+             is-sns? (and (= "Notification" (:Type outer-message))
+                          (contains? outer-message :TopicArn))]
+         (cond
+           is-sns? (do (log/debug "Decoding message from SNS" :sns-message-id (:MessageId outer-message))
+                       (parse-sns-message outer-message))
+           :else (do (log/debug "Decoding message from SQS")
+                     (parse-sqs-message outer-message)))))))
   ([]
    (auto-decode-json-message (lazy-load-data-json))))
 
-(defn with-message-decoder
-  "Assocs :message with the result of the given message decoder, called with the message body."
-  [process-fn decoder]
-  (fn [{:keys [message-body] :as message}]
-    (-> message
-        (assoc :message (decoder message-body))
-        process-fn)))
-
-(defn with-error-handler
-  "Calls the given error handler when any error occurs further down the handler stack."
-  [process-fn error-handler]
-  (fn [message]
-    (try
-      (process-fn message)
-      (catch Exception ex
-        (error-handler ex)))))
-
-(defn uuid [] (str (java.util.UUID/randomUUID)))
+(defn uuid
+  "Generates a V4 UUID and converts it to a string."
+  []
+  (str (java.util.UUID/randomUUID)))

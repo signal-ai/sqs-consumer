@@ -98,7 +98,7 @@
                test-error-handler]
       (let [{:keys [config start-consumer stop-consumer]} (test-consumer
                                                            (-> processing-function
-                                                               (batch/with-decoder identity)
+                                                               (batch/with-decoder #(hash-map :message-body %))
                                                                batch/with-auto-delete
                                                                (batch/with-error-handling test-error-handler)))
             _ (sqs/send-message aws-config
@@ -121,8 +121,8 @@
       :spying [processing-function
                test-error-handler]
       (let [{:keys [config start-consumer stop-consumer]} (test-consumer
-                                                           (-> (fn [batch] (throw (new Exception "testing error handling")))
-                                                               (batch/with-decoder identity)
+                                                           (-> (fn [_] (throw (new Exception "testing error handling")))
+                                                               (batch/with-decoder #(hash-map :message-body %))
                                                                batch/with-auto-delete
                                                                (batch/with-error-handling test-error-handler)))
             _ (sqs/send-message aws-config

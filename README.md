@@ -37,7 +37,8 @@ Some common usage patterns, the usage should be fairly similar:
 (require [sqs-consumer.sequential :as queue.sequential]
          [sqs-consumer.utils :as queue.utils])
 
-(defn process [message-body]
+;; called with each individual message, see core/parse-message-attributes for the provided arguments
+(defn process [{:keys [message-body]}]
   (prn message-body))
 
 (defn create-queue-consumer []
@@ -46,6 +47,7 @@ Some common usage patterns, the usage should be fairly similar:
                                     :shutdown-wait-time-ms 2000
                                     :process-fn (-> process
                                                     (queue.sequential/with-decoder (queue.utils/auto-decode-json-message))
+                                                    ;; optional. If not included, a zero-arg function delete-message is provided to process-fn
                                                     (queue.sequential/with-auto-delete)
                                                     (queue.sequential/with-error-handling #(prn % "error processing message")))))
 
@@ -95,8 +97,9 @@ Under the hood messages here are processed using Claypoole's `upmap` which is un
 (require [sqs-consumer.parallel :as queue.parallel]
          [sqs-consumer.utils :as queue.utils])
 
-(defn process [message-batch]
-  (prn (count message-batch))
+;; called with each individual message
+(defn process [{:keys [message-body]}]
+  (prn (count {:keys [message-body]}))
 
 (defn create-queue-consumer []
   (queue.parallel/create-consumer :queue-url "sqs-queue-name"
@@ -105,6 +108,7 @@ Under the hood messages here are processed using Claypoole's `upmap` which is un
                                   :shutdown-wait-time-ms 2000
                                   :process-fn (-> process
                                                   (queue.parallel/with-decoder (queue.utils/auto-decode-json-message))
+                                                  ;; optional. If not included, a zero-arg function delete-message is provided to process-fn
                                                   (queue.parallel/with-auto-delete)
                                                   (queue.parallel/with-error-handling #(prn % "error processing messages")))))
 
@@ -116,6 +120,34 @@ Under the hood messages here are processed using Claypoole's `upmap` which is un
                                  (stop-consumer))))
     (log/info "listening for messages...")
     (start-consumer))
+```
+
+### Using a different JSON decoder
+
+The higher-order utility functions
+
+-   `(queue.utils/auto-decode-json-message)`
+-   `(queue.utils/decode-sns-encoded-json)`
+-   `(queue.utils/decode-sqs-encoded-json)`
+
+all take a `json-fn` argument which can be used to customise the JSON decoding.
+
+If they're called with zero-arguments, `clojure.data.json` is used (this is then required to be available on your classpath).
+
+To use [jsonista](https://github.com/metosin/jsonista), construct the decoder with
+
+```clojure
+(require '[jsonista.core :as j])
+
+(queue.utils/auto-decode-json-message #(j/read-value % j/keyword-keys-object-mapper)))
+```
+
+To use [cheshire](https://github.com/dakrone/cheshire):
+
+```clojure
+(require '[cheshire.core :as json])
+
+(queue.utils/auto-decode-json-message #(json/parse-string % true))
 ```
 
 ### Queue URL vs Queue Name
@@ -130,7 +162,6 @@ If you pass `queue-url` then `queue-name` will never be used. If you only pass `
 -   [ ] Better documentation
 -   [ ] Choose a license?
 -   [ ] Tests are a bit flaky - sometimes due to timing they fail
--   [ ] metadata from SQS and SNS is lost during the deserialisation, maybe some of that is needed?
 
 ## Local development
 
@@ -142,7 +173,7 @@ Required tools:
 
 ### Running the tests
 
-```
+```shell
 docker-compose up -d
 docker-compose build && docker-compose run --rm sqs_consumer lein test
 ```

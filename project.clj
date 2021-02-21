@@ -7,8 +7,9 @@
                  [com.amazonaws/aws-java-sdk-sqs "1.11.475"]
                  [org.clojure/tools.logging "1.1.0"]
                  [com.clojure-goes-fast/lazy-require "0.1.1"]]
-  :profiles {:dev {:dependencies [[org.clojure/clojure "1.8.0"]
+  :profiles {:dev {:dependencies [[org.clojure/clojure "1.10.2"]
                                   [org.clojure/data.json "0.2.6"]
+                                  [metosin/jsonista "0.3.1"]
                                   [com.climate/claypoole "1.1.4"]
                                   [greenpowermonitor/test-doubles "0.1.2"]]}}
   :deploy-repositories [["releases" {:url "https://clojars.org/repo"

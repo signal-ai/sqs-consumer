@@ -50,7 +50,7 @@
   (fn [{:keys [message-body]}]
     (process-fn message-body)))
 
-(deftest sequential-consumer-test
+(deftest parallel-consumer-test
   (testing "can create the consumer"
     (let [{:keys [start-consumer]} (test-consumer processing-function)]
       (is (not (nil? start-consumer)))))
@@ -71,9 +71,8 @@
             consumer (future (start-consumer))]
         (is (not (nil? consumer)))
         (Thread/sleep 100)
-        ;; expect here that messages are processed one by one, sequentially
         (is (= 2 (-> processing-function td/calls-to count)))
-        (is (= [["hello world 1"] ["hello world 2"]] (td/calls-to processing-function)))
+        (is (= (set [["hello world 1"] ["hello world 2"]]) (set (td/calls-to processing-function))))
         (is (nil? (stop-consumer)))
         (Thread/sleep 100)
         (is (true? @(:finished-shutdown config))))))
@@ -90,9 +89,8 @@
             consumer (future (start-consumer))]
         (is (not (nil? consumer)))
         (Thread/sleep 100)
-        ;; expect here that messages are processed one by one, sequentially
         (is (= 2 (-> processing-function td/calls-to count)))
-        (is (= [["hello world 1"] ["hello world 2"]] (td/calls-to processing-function)))
+        (is (= (set [["hello world 1"] ["hello world 2"]]) (set (td/calls-to processing-function))))
         (is (nil? (stop-consumer)))
         (Thread/sleep 100)
         (is (true? @(:finished-shutdown config)))))))
