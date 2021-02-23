@@ -3,12 +3,7 @@
    [sqs-consumer.core :as core]
    [opentracing-clj.core :as tracing]
    [opentracing-clj.propagation :as propagation])
-  (:import [io.opentracing.tag Tag Tags]))
-
-(defn- tag
-  "Returns the key for the opentracing Java Tag object."
-  [^Tag tag]
-  (.getKey tag))
+  (:import [io.opentracing.tag Tags]))
 
 (defn with-tracing
   "Add a trace to the queue. Propagates context from the :span-ctx attribute if it exists.
@@ -21,15 +16,15 @@
     (let [ctx (when-let [carrier (-> message :message-attributes span-context-attribute-name)] (propagation/extract carrier :text))]
       (tracing/with-span [s
                           {:name (format "queue-%s-message-recieved" (-> message ::core/config :queue-name))
-                           :tags (cond-> {(tag Tags/COMPONENT) "signal-ai/sqs-consumer"
-                                          (tag Tags/SPAN_KIND) Tags/SPAN_KIND_CONSUMER
-                                          (tag Tags/PEER_SERVICE) "sqs"
-                                          (tag Tags/PEER_ADDRESS) (-> message ::core/config :queue-url)}
+                           :tags (cond-> {Tags/COMPONENT "signal-ai/sqs-consumer"
+                                          Tags/SPAN_KIND Tags/SPAN_KIND_CONSUMER
+                                          Tags/PEER_SERVICE "sqs"
+                                          Tags/PEER_ADDRESS (-> message ::core/config :queue-url)}
                                    ctx (assoc :child-of ctx))}]
         (try
           (process-fn message)
           (catch Throwable e
-            (tracing/set-tags {(tag Tags/ERROR) true})
+            (tracing/set-tags {Tags/ERROR true})
             (tracing/log {:event "error"
                           :error.object e})
             (throw e)))))))

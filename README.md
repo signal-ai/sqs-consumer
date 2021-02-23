@@ -156,7 +156,7 @@ If you pass `queue-url` then `queue-name` will never be used. If you only pass `
 
 ### Tracing
 
-To add tracing add `sqs-consumer.opentracing/with-tracing` to your `process-fn`. This requires the [opentracing-clj](https://github.com/alvinfrancis/opentracing-clj) library on your classpath (this is not included).
+To add tracing add `sqs-consumer.opentracing/with-tracing` to your `process-fn`. This requires the [opentracing-clj](https://github.com/alvinfrancis/opentracing-clj) library (with version > "0.2.2") on your classpath (this is not included).
 
 This function attempts to extract existing span context from upstream services. This context will be pulled from `:message-attributes` using the given key, assuming the `text` opentracing carrier format.
 
