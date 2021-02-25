@@ -14,66 +14,80 @@
 
 (defn- lazy-load-data-json []
   (try
+    #_:clj-kondo/ignore
     (lreq/with-lazy-require [[clojure.data.json :as json]]
       #(clojure.data.json/read-str % :key-fn keyword))
     (catch Throwable e
       (log/error e "decoder called with no json-fn and without clojure.data.json on the classpath. Please either add clojure.data.json or provide a json-fn.")
       (throw e))))
 
-(defn decode-sns-encoded-json
+(defn sns-encoded-json-decoder
   "Returns a decoder which decodes the external SNS message and the internal \"Message\" property on the message, as well as parsing any message attributes
    which may be in the message body.
+   
+   Adds :sqs-consumer/metadata :message-envelope as :sns to the decoded message for use by downstream handlers.
 
    Not required if RawMessageDelivery is true on the SNS topic.
    
    If no json-fn is provided, will load clojure.data.json."
   ([json-fn]
-   (fn [message]
-     (let [;; we may have already decoded this if wrapped with auto-decode-json-message
-           outer-message (if (string? message) (json-fn message) message)]
-       {:message-body (-> outer-message
-                          :Message
-                          (json-fn)
-                          (add-timestamp outer-message))
-        :message-attributes (->> outer-message
-                                 :MessageAttributes
-                                 (core/parse-message-attributes))
-        :sqs-consumer/metadata {:message-envelope :sns}})))
+   (fn [{:keys [message-body] :as message}]
+     (let [;; we may have already decoded this if wrapped with with-auto-json-decoder
+           outer-message (if (string? message-body) (json-fn message-body) message-body)]
+       (-> message (merge {:message-body (-> outer-message
+                                             :Message
+                                             (json-fn)
+                                             (add-timestamp outer-message))
+                           :message-attributes (->> outer-message
+                                                    :MessageAttributes
+                                                    (core/parse-message-attributes))})
+           (assoc-in [:sqs-consumer/metadata :message-envelope] :sns)))))
   ([]
-   (decode-sns-encoded-json (lazy-load-data-json))))
+   (sns-encoded-json-decoder (lazy-load-data-json))))
 
-(defn decode-sqs-encoded-json
+(defn sqs-encoded-json-decoder
   "Returns a decoder which decodes the sqs message as json.
    
+   Adds :sqs-consumer/metadata :message-envelope as :sqs to the decoded message for use by downstream handlers.
+
    If no json-fn is provided, will load clojure.data.json."
   ([json-fn]
-   (fn [message]
-     {;; we may have already decoded this if wrapped with auto-decode-json-message
-      :message-body (if (string? message) (json-fn message) message)
-      :sqs-consumer/metadata {:message-envelope :sqs}}))
+   (fn [{:keys [message-body] :as message}]
+     (-> message (merge {;; we may have already decoded this if wrapped with with-auto-json-decoder
+                         :message-body (if (string? message-body) (json-fn message-body) message-body)})
+         (assoc-in [:sqs-consumer/metadata :message-envelope] :sqs))))
   ([]
-   (decode-sqs-encoded-json (lazy-load-data-json))))
+   (sqs-encoded-json-decoder (lazy-load-data-json))))
 
-(defn auto-decode-json-message
+
+(defn auto-json-decoder
   "Returns a decoder determines whether the message was from SQS or SNS and decodes the message appropriately.
    
-   Adds :sqs-consumer/metadata :message-envelope as :sqs or :sns to the decoded message for use by downstream handlers.
+   Adds :sqs-consumer/metadata :message-envelope as :sns or :sqs ()depending on the envelope) to the decoded message for use by downstream handlers.
+
+   Not required if RawMessageDelivery is true on the SNS topic.
   
    If no json-fn is provided, will load clojure.data.json."
   ([json-fn]
-   (let [parse-sns-message (decode-sns-encoded-json json-fn)
-         parse-sqs-message (decode-sqs-encoded-json json-fn)]
-     (fn [message]
-       (let [outer-message (json-fn message)
+   (let [parse-sns-message (sns-encoded-json-decoder json-fn)
+         parse-sqs-message (sqs-encoded-json-decoder json-fn)]
+     (fn [{:keys [message-body] :as message}]
+       (let [outer-message (json-fn message-body)
+             message-with-parsed-body (assoc message :message-body outer-message)
              is-sns? (and (= "Notification" (:Type outer-message))
                           (contains? outer-message :TopicArn))]
          (cond
            is-sns? (do (log/debug "Decoding message from SNS" :sns-message-id (:MessageId outer-message))
-                       (parse-sns-message outer-message))
+                       (parse-sns-message message-with-parsed-body))
            :else (do (log/debug "Decoding message from SQS")
-                     (parse-sqs-message outer-message)))))))
+                     (parse-sqs-message message-with-parsed-body)))))))
   ([]
-   (auto-decode-json-message (lazy-load-data-json))))
+   (auto-json-decoder (lazy-load-data-json))))
+
+(defn with-decoder
+  [process-fn decoder]
+  (fn [message]
+    (process-fn (decoder message))))
 
 (defn uuid
   "Generates a V4 UUID and converts it to a string."

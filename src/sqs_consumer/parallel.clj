@@ -14,8 +14,6 @@
 
 (def with-auto-delete sequential/with-auto-delete)
 
-(def with-decoder sequential/with-decoder)
-
 (def with-error-handling sequential/with-error-handling)
 
 (defn create-consumer [& {:keys [threadpool-size process-fn]

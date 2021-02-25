@@ -41,14 +41,6 @@
     (when (process-fn (dissoc message :delete-message))
       (delete-message))))
 
-(defn with-decoder
-  "Merges the message with the result of the given message decoder. The decoder is called with the :message-body from the extract-message function."
-  [process-fn decoder]
-  (fn [message]
-    (-> message
-        (merge (decoder (:message-body message)))
-        process-fn)))
-
 (defn with-error-handling
   "Calls the given error handler when any error occurs further down the handler stack."
   [process-fn error-handler]
