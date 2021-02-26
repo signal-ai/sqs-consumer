@@ -25,8 +25,10 @@
    :message-attributes (core/parse-message-attributes (:message-attributes message))
    ;; the sqs delete message API call pre-bound to the given message/aws config
    :delete-message #(delete-message config (:receipt-handle message))
-    ;; the sqs change message visibility API call pre-bound to the given message/AWS config
-   :change-message-visibility #(change-message-visibility config (:receipt-handle message) %)})
+   ;; the sqs change message visibility API call pre-bound to the given message/AWS config
+   :change-message-visibility #(change-message-visibility config (:receipt-handle message) %)
+   ;; config for the sqs-consumer
+   ::core/config config})
 
 (defn sequential-process [process-fn]
   (fn [{:keys [config messages]}]

@@ -37,18 +37,22 @@
                        aws-config
                        (get-queue-url aws-config test-queue-name))))
 
-(defn test-consumer []
-  (create-consumer {:queue-name test-queue-name
-                    :max-number-of-messages 5
-                    :shutdown-wait-time-ms 1500
-                    :wait-time-seconds 1
-                    :aws-config aws-config
-                    :process-fn processing-function}))
+(defn test-consumer
+  ([process-fn]
+   (create-consumer {:queue-name test-queue-name
+                     :max-number-of-messages 5
+                     :shutdown-wait-time-ms 1500
+                     :wait-time-seconds 1
+                     :aws-config aws-config
+                     :process-fn process-fn}))
+  ([]
+   (test-consumer processing-function)))
 
 (deftest basic-consumer-test
   (testing "can create the consumer"
     (let [{:keys [start-consumer]} (test-consumer)]
       (is (not (nil? start-consumer)))))
+
   (testing "can start the consumer"
     (let [{:keys [config start-consumer stop-consumer]} (test-consumer)
           consumer (future (start-consumer))]
@@ -56,6 +60,7 @@
       (is (nil? (stop-consumer)))
       (Thread/sleep 2000)
       (is (true? @(:finished-shutdown config)))))
+
   (testing "can receive a message"
     (td/with-doubles
       :spying [processing-function]

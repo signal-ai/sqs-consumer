@@ -1,5 +1,7 @@
 (ns sqs-consumer.utils-test
   (:require [clojure.test :refer [deftest is]]
+            [greenpowermonitor.test-doubles :as td]
+            [sqs-consumer.sequential :as seq]
             [sqs-consumer.utils :as utils]
             [jsonista.core :as jsonista]))
 
@@ -79,6 +81,32 @@
           :sqs-consumer/metadata {:message-envelope :sqs}}
          ((utils/sqs-encoded-json-decoder)
           (wrapped-message "{\"validFrom\": \"2018-03-10T09:00:00Z\",\"validTo\": \"2018-03-11T09:00:00Z\",\"eventLevelId\": 1,\"eventTypeId\": 1,\"operatorId\": 3375001}")))))
+
+(defn processing-function [_])
+
+(deftest with-decoder-passes-through-values-correctly
+  (td/with-doubles
+    :spying [processing-function]
+    (let [message-body {:id "123"
+                        :attribute {:sub-attribute true}}
+          process-fn (-> processing-function
+                         (utils/with-decoder (utils/auto-json-decoder)))
+          message {:body (jsonista/write-value-as-string message-body)}
+          config {:visibility-timeout 123}]
+
+      (process-fn (seq/extract-message config message))
+      (is (= 1 (-> processing-function td/calls-to count)) "Expected process-fn to be called once")
+      (is (= 1 (-> processing-function td/calls-to first count)) "Expected process-fn to be called with one argument")
+      (is (= #{:message
+               :attributes
+               :message-body
+               :message-attributes
+               :delete-message
+               :change-message-visibility
+               :sqs-consumer.core/metadata
+               :sqs-consumer.core/config} (-> processing-function td/calls-to first first keys set)))
+      (is (= config (-> processing-function td/calls-to first first :sqs-consumer.core/config)))
+      (is (= message-body (-> processing-function td/calls-to first first :message-body))))))
 
 (deftest uuid-returns-a-v4-uuid-as-a-string
   (let [uuid (utils/uuid)]

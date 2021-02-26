@@ -14,6 +14,7 @@
 
 (defn- lazy-load-data-json []
   (try
+    (log/debug "Lazy loading clojure.data.json")
     #_:clj-kondo/ignore
     (lreq/with-lazy-require [[clojure.data.json :as json]]
       #(clojure.data.json/read-str % :key-fn keyword))
@@ -25,13 +26,13 @@
   "Returns a decoder which decodes the external SNS message and the internal \"Message\" property on the message, as well as parsing any message attributes
    which may be in the message body.
    
-   Adds :sqs-consumer/metadata :message-envelope as :sns to the decoded message for use by downstream handlers.
+   Adds :sqs-consumer.core/metadata :message-envelope as :sns to the decoded message for use by downstream handlers.
 
    Not required if RawMessageDelivery is true on the SNS topic.
    
    If no json-fn is provided, will load clojure.data.json."
   ([json-fn]
-   (fn [{:keys [message-body] :as message}]
+   (fn decode-sns-encoded-json [{:keys [message-body] :as message}]
      (let [;; we may have already decoded this if wrapped with with-auto-json-decoder
            outer-message (if (string? message-body) (json-fn message-body) message-body)]
        (-> message (merge {:message-body (-> outer-message
@@ -41,21 +42,21 @@
                            :message-attributes (->> outer-message
                                                     :MessageAttributes
                                                     (core/parse-message-attributes))})
-           (assoc-in [:sqs-consumer/metadata :message-envelope] :sns)))))
+           (assoc-in [::core/metadata :message-envelope] :sns)))))
   ([]
    (sns-encoded-json-decoder (lazy-load-data-json))))
 
 (defn sqs-encoded-json-decoder
   "Returns a decoder which decodes the sqs message as json.
    
-   Adds :sqs-consumer/metadata :message-envelope as :sqs to the decoded message for use by downstream handlers.
+   Adds :sqs-consumer.core/metadata :message-envelope as :sqs to the decoded message for use by downstream handlers.
 
    If no json-fn is provided, will load clojure.data.json."
   ([json-fn]
-   (fn [{:keys [message-body] :as message}]
+   (fn decode-sqs-encoded-json [{:keys [message-body] :as message}]
      (-> message (merge {;; we may have already decoded this if wrapped with with-auto-json-decoder
                          :message-body (if (string? message-body) (json-fn message-body) message-body)})
-         (assoc-in [:sqs-consumer/metadata :message-envelope] :sqs))))
+         (assoc-in [::core/metadata :message-envelope] :sqs))))
   ([]
    (sqs-encoded-json-decoder (lazy-load-data-json))))
 
@@ -63,7 +64,7 @@
 (defn auto-json-decoder
   "Returns a decoder determines whether the message was from SQS or SNS and decodes the message appropriately.
    
-   Adds :sqs-consumer/metadata :message-envelope as :sns or :sqs ()depending on the envelope) to the decoded message for use by downstream handlers.
+   Adds :sqs-consumer.core/metadata :message-envelope as :sns or :sqs ()depending on the envelope) to the decoded message for use by downstream handlers.
 
    Not required if RawMessageDelivery is true on the SNS topic.
   

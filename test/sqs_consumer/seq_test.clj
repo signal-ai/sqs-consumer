@@ -1,9 +1,9 @@
 (ns sqs-consumer.seq-test
   (:require [clojure.test :refer [deftest is testing use-fixtures]]
-            [sqs-consumer.core :refer [get-queue-url]]
-            [sqs-consumer.sequential :as seq]
             [amazonica.aws.sqs :as sqs]
-            [greenpowermonitor.test-doubles :as td])
+            [greenpowermonitor.test-doubles :as td]
+            [sqs-consumer.core :refer [get-queue-url]]
+            [sqs-consumer.sequential :as seq])
   (:import java.io.FileNotFoundException))
 
 (def test-queue-name "seq-test-queue")
@@ -54,6 +54,7 @@
   (testing "can create the consumer"
     (let [{:keys [start-consumer]} (test-consumer processing-function)]
       (is (not (nil? start-consumer)))))
+
   (testing "can start the consumer"
     (let [{:keys [config start-consumer stop-consumer]} (test-consumer processing-function)
           consumer (future (start-consumer))]
@@ -61,6 +62,7 @@
       (is (nil? (stop-consumer)))
       (Thread/sleep 2000)
       (is (true? @(:finished-shutdown config)))))
+
   (testing "can receive messages"
     (td/with-doubles
       :spying [processing-function]
