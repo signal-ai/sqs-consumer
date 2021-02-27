@@ -8,10 +8,19 @@
                  [org.clojure/tools.logging "1.1.0"]
                  [com.clojure-goes-fast/lazy-require "0.1.1"]]
   :profiles {:dev {:dependencies [[org.clojure/clojure "1.10.2"]
+
                                   [org.clojure/data.json "0.2.6"]
                                   [metosin/jsonista "0.3.1"]
                                   [com.climate/claypoole "1.1.4"]
-                                  [greenpowermonitor/test-doubles "0.1.2"]]}}
+
+                                  ;; testing deps
+                                  [greenpowermonitor/test-doubles "0.1.2"]
+
+                                  [lambdaisland/kaocha "1.0.732"]
+                                  [lambdaisland/kaocha-junit-xml "0.0.76"]
+                                  [lambdaisland/kaocha-cloverage "1.0.75"]]}
+             :test {:env {:localstack-host "localhost"}}}
+  :aliases {"test" ["with-profile" "dev,test" "run" "-m" "kaocha.runner"]}
   :deploy-repositories [["releases" {:url "https://clojars.org/repo"
                                      :username :env/clojars_username
                                      :password :env/clojars_token

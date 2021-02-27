@@ -1,6 +1,7 @@
 (ns sqs-consumer.utils-test
   (:require [clojure.test :refer [deftest is]]
             [greenpowermonitor.test-doubles :as td]
+            [sqs-consumer.core :as core]
             [sqs-consumer.sequential :as seq]
             [sqs-consumer.utils :as utils]
             [jsonista.core :as jsonista]))
@@ -30,7 +31,7 @@
   (is (= {:message-body {:validFrom "2018-03-10T09:00:00Z" :validTo "2018-03-11T09:00:00Z" :eventLevelId 1 :eventTypeId 1 :operatorId 3375001 :timestamp "2018-04-17T11:33:44.770Z"}
           :message-attributes {:Type "Orchestration.Services.Model.Pollution.PollutionMessage"
                                :AWS.SNS.MOBILE.MPNS.Type "token"}
-          :sqs-consumer/metadata {:message-envelope :sns}}
+          ::core/metadata {:message-envelope :sns}}
          ((utils/auto-json-decoder) (wrapped-message (test-sns-message))))))
 
 (deftest auto-decode-json-message-adds-timestamp-from-sns-message-if-absent
@@ -52,18 +53,18 @@
   (is (= {:message-body {:validFrom "2018-03-10T09:00:00Z" :validTo "2018-03-11T09:00:00Z" :eventLevelId 1 :eventTypeId 1 :operatorId 3375001 :timestamp "2018-04-17T11:33:44.770Z"}
           :message-attributes {:Type "Orchestration.Services.Model.Pollution.PollutionMessage"
                                :AWS.SNS.MOBILE.MPNS.Type "token"}
-          :sqs-consumer/metadata {:message-envelope :sns}}
+          ::core/metadata {:message-envelope :sns}}
          ((utils/auto-json-decoder #(jsonista/read-value % jsonista/keyword-keys-object-mapper)) (wrapped-message (test-sns-message))))))
 
 (deftest auto-decode-json-message-decodes-sqs-no-args
   (is (= {:message-body {:validFrom "2018-03-10T09:00:00Z" :validTo "2018-03-11T09:00:00Z" :eventLevelId 1 :eventTypeId 1 :operatorId 3375001}
-          :sqs-consumer/metadata {:message-envelope :sqs}}
+          ::core/metadata {:message-envelope :sqs}}
          ((utils/auto-json-decoder)
           (wrapped-message "{\"validFrom\": \"2018-03-10T09:00:00Z\",\"validTo\": \"2018-03-11T09:00:00Z\",\"eventLevelId\": 1,\"eventTypeId\": 1,\"operatorId\": 3375001}")))))
 
 (deftest auto-decode-json-message-decodes-sqs-jsonista
   (is (= {:message-body {:validFrom "2018-03-10T09:00:00Z" :validTo "2018-03-11T09:00:00Z" :eventLevelId 1 :eventTypeId 1 :operatorId 3375001}
-          :sqs-consumer/metadata {:message-envelope :sqs}}
+          ::core/metadata {:message-envelope :sqs}}
          ((utils/auto-json-decoder #(jsonista/read-value % jsonista/keyword-keys-object-mapper))
           (wrapped-message "{\"validFrom\": \"2018-03-10T09:00:00Z\",\"validTo\": \"2018-03-11T09:00:00Z\",\"eventLevelId\": 1,\"eventTypeId\": 1,\"operatorId\": 3375001}")))))
 
@@ -72,13 +73,13 @@
   (is (= {:message-body {:validFrom "2018-03-10T09:00:00Z" :validTo "2018-03-11T09:00:00Z" :eventLevelId 1 :eventTypeId 1 :operatorId 3375001 :timestamp "2018-04-17T11:33:44.770Z"}
           :message-attributes {:Type "Orchestration.Services.Model.Pollution.PollutionMessage"
                                :AWS.SNS.MOBILE.MPNS.Type "token"}
-          :sqs-consumer/metadata {:message-envelope :sns}}
+          ::core/metadata {:message-envelope :sns}}
          ((utils/sns-encoded-json-decoder) (wrapped-message (test-sns-message))))))
 
 
 (deftest sqs-encoded-json-decoder-decodes-sqs-no-args
   (is (= {:message-body {:validFrom "2018-03-10T09:00:00Z" :validTo "2018-03-11T09:00:00Z" :eventLevelId 1 :eventTypeId 1 :operatorId 3375001}
-          :sqs-consumer/metadata {:message-envelope :sqs}}
+          ::core/metadata {:message-envelope :sqs}}
          ((utils/sqs-encoded-json-decoder)
           (wrapped-message "{\"validFrom\": \"2018-03-10T09:00:00Z\",\"validTo\": \"2018-03-11T09:00:00Z\",\"eventLevelId\": 1,\"eventTypeId\": 1,\"operatorId\": 3375001}")))))
 
