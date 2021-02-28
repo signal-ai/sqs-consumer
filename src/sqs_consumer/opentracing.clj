@@ -15,12 +15,12 @@
   (fn [message]
     (let [ctx (when-let [carrier (-> message :message-attributes span-context-attribute-name)] (propagation/extract carrier :text))]
       (tracing/with-span [s
-                          {:name (format "queue-%s-message-recieved" (-> message ::core/config :queue-name))
-                           :tags (cond-> {Tags/COMPONENT "signal-ai/sqs-consumer"
-                                          Tags/SPAN_KIND Tags/SPAN_KIND_CONSUMER
-                                          Tags/PEER_SERVICE "sqs"
-                                          Tags/PEER_ADDRESS (-> message ::core/config :queue-url)}
-                                   ctx (assoc :child-of ctx))}]
+                          (cond-> {:name (format "queue-%s-message-recieved" (-> message ::core/config :queue-name))
+                                   :tags {(.getKey Tags/COMPONENT) "signal-ai/sqs-consumer"
+                                          (.getKey Tags/SPAN_KIND) Tags/SPAN_KIND_CONSUMER
+                                          (.getKey Tags/PEER_SERVICE) "sqs"
+                                          "peer.address" (-> message ::core/config :queue-url)}}
+                            ctx (assoc :child-of ctx))]
         (try
           (process-fn message)
           (catch Throwable e

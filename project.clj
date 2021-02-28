@@ -14,6 +14,8 @@
   :profiles {:dev {:dependencies [[org.clojure/clojure "1.10.2"]
 
                                   [org.clojure/data.json "1.0.0"]
+                                  [opentracing-clj "0.2.2"]
+                                  [io.opentracing/opentracing-mock "0.33.0"]
                                   [metosin/jsonista "0.3.1"]
                                   [com.climate/claypoole "1.1.4"]
 
