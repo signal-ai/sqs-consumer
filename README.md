@@ -1,5 +1,6 @@
 # SQS Consumer
-[![Clojars Project](https://img.shields.io/clojars/v/signal-ai/sqs-consumer.svg)](https://clojars.org/signal-ai/sqs-consumer)
+
+[![Clojars Project](https://img.shields.io/clojars/v/com.signal-ai/sqs-consumer.svg)](https://clojars.org/com.signal-ai/sqs-consumer)
 
 ## Rationale
 
@@ -20,7 +21,9 @@ There are a number of dependencies for the `utils` ns, these should be dev depen
 `utils.clj` contains ring like middleware to take care of some of the common processing you might want to do on a message
 
 ### Dependencies
-Both the `utils` and `parallel` have transitive dependencies that are *not* bundled with this library. If you don't need them, don't declare the dependencies. Be sure to include these dependencies when you do use them:
+
+Both the `utils` and `parallel` have transitive dependencies that are _not_ bundled with this library. If you don't need them, don't declare the dependencies. Be sure to include these dependencies when you do use them:
+
 ```clj
 [org.clojure/data.json "0.2.6"] ;; required by utils
 [com.climate/claypoole "1.1.4"] ;; required by parallel
@@ -84,8 +87,8 @@ Some common usage patterns, the usage should be fairly similar:
     (start-consumer))
 ```
 
-
 ### Parallel processing
+
 Under the hood messages here are processed using Claypoole's `upmap` which is un-ordered and in parallel. If you're using a FIFO queue where order is guaranteed, this will likely break that guarantee.
 
 ```clj
@@ -115,31 +118,32 @@ Under the hood messages here are processed using Claypoole's `upmap` which is un
     (start-consumer))
 ```
 
-
 ### Queue URL vs Queue Name
 
 If you pass `queue-url` then `queue-name` will never be used. If you only pass `queue-name` then `queue-url` will be looked up; AWS will throw an exception if a Queue with that name cannot be found. If neither are passed then an `IllegalArgumentException` will be thrown.
 
 ## TODO
- - [ ] deps.edn?
- - [ ] Don't hard code visibility timeout
- - [ ] Support being able to extend message timeout
- - [ ] Better documentation
- - [ ] Choose a license?
- - [ ] Tests are a bit flaky - sometimes due to timing they fail
- - [ ] metadata from SQS and SNS is lost during the deserialisation, maybe some of that is needed?
- - [x] Should we be using `pmap` or `map` across message?
- - [ ] Can we lose the dependency on `data.json`?
 
+-   [ ] deps.edn?
+-   [ ] Don't hard code visibility timeout
+-   [ ] Support being able to extend message timeout
+-   [ ] Better documentation
+-   [ ] Choose a license?
+-   [ ] Tests are a bit flaky - sometimes due to timing they fail
+-   [ ] metadata from SQS and SNS is lost during the deserialisation, maybe some of that is needed?
+-   [x] Should we be using `pmap` or `map` across message?
+-   [ ] Can we lose the dependency on `data.json`?
 
 ## Local development
 
 Testing is done inside docker so no Clojure or AWS depencies are required.
 Required tools:
- - Docker
- - Docker Compose
- 
+
+-   Docker
+-   Docker Compose
+
 ### Running the tests
+
 ```
 docker-compose up -d
 docker-compose build && docker-compose run --rm sqs_consumer lein test
