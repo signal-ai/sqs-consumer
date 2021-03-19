@@ -85,10 +85,11 @@
   ([]
    (auto-json-decoder (lazy-load-data-json))))
 
-(defn with-decoder
-  [process-fn decoder]
+(defn with-handler
+  "Calls the given handler and passes it down the chain. Useful when threading a process-fn."
+  [process-fn handler]
   (fn [message]
-    (process-fn (decoder message))))
+    (process-fn (handler message))))
 
 (defn uuid
   "Generates a V4 UUID and converts it to a string."

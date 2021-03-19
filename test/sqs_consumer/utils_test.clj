@@ -85,13 +85,13 @@
 
 (defn processing-function [_])
 
-(deftest with-decoder-passes-through-values-correctly
+(deftest with-handler-passes-through-values-correctly
   (td/with-doubles
     :spying [processing-function]
     (let [message-body {:id "123"
                         :attribute {:sub-attribute true}}
           process-fn (-> processing-function
-                         (utils/with-decoder (utils/auto-json-decoder)))
+                         (utils/with-handler (utils/auto-json-decoder)))
           message {:body (jsonista/write-value-as-string message-body)}
           config {:visibility-timeout 123}]
 

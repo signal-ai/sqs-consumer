@@ -10,11 +10,13 @@
     -   `parallel/with-decoder`
     -   `utils/decode-sns-encoded-json`
 
-    Added new decoding utility higher-order functions. These take a `json-fn` which decodes a JSON string as a first argument, or fallback to clojure.data.json if only one argumetn is specified and the clojure.data.json is found on the classpath:
+    Added new decoding utility higher-order functions. These take a `json-fn` which decodes a JSON string as a first argument, or fallback to clojure.data.json if only one argumetn is specified and the `clojure.data.json` is found on the classpath:
 
     -   `utils/sqs-encoded-json-decoder`
     -   `utils/sns-encoded-json-decoder`
     -   `utils/auto-json-decoder`
+
+    These should be used with the new added `utils/with-handler`, which is a simple wrapper for a function which acts on a message and returns the message with some mutation.
 
     The SNS functions additionally take the message attributes from the SNS payload and add them to `message-attributes` (see below).
 

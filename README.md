@@ -46,7 +46,7 @@ Some common usage patterns, the usage should be fairly similar:
                                     :max-number-of-messages 5
                                     :shutdown-wait-time-ms 2000
                                     :process-fn (-> process
-                                                    (queue.utils/with-auto-message-decoder)
+                                                    (queue.utils/with-auto-message-decoder (queue.utils/with-auto-message-decoder))
                                                     ;; optional. If not included, a zero-arg function delete-message is provided to process-fn
                                                     (queue.sequential/with-auto-delete)
                                                     (queue.sequential/with-error-handling #(prn % "error processing message")))))
@@ -75,7 +75,7 @@ Some common usage patterns, the usage should be fairly similar:
                                :max-number-of-messages 10 ;; this effectively becomes the maximum batch size
                                :shutdown-wait-time-ms 2000
                                :process-fn (-> process
-                                               (queue.utils/with-auto-message-decoder)
+                                               (queue.utils/with-handler (queue.utils/with-auto-message-decoder))
                                                (queue.batch/with-auto-delete)
                                                (queue.batch/with-error-handling #(prn % "error processing messages")))))
 
@@ -107,7 +107,7 @@ Under the hood messages here are processed using Claypoole's `upmap` which is un
                                   :threadpool-size 3 ;; defaults to 10. Should be smaller than the number of messages that are dequeued from SQS. More will just mean un-used threads
                                   :shutdown-wait-time-ms 2000
                                   :process-fn (-> process
-                                                  (queue.utils/with-auto-message-decoder)
+                                                  (queue.utils/with-handler (queue.utils/with-auto-message-decoder))
                                                   ;; optional. If not included, a zero-arg function delete-message is provided to process-fn
                                                   (queue.parallel/with-auto-delete)
                                                   (queue.parallel/with-error-handling #(prn % "error processing messages")))))
@@ -139,7 +139,7 @@ To use [jsonista](https://github.com/metosin/jsonista), construct the decoder wi
 ```clojure
 (require '[jsonista.core :as j])
 
-(queue.utils/with-auto-message-decoder #(j/read-value % j/keyword-keys-object-mapper)))
+(queue.utils/with-handler (queue.utils/with-auto-message-decoder #(j/read-value % j/keyword-keys-object-mapper))))
 ```
 
 To use [cheshire](https://github.com/dakrone/cheshire):
@@ -147,7 +147,7 @@ To use [cheshire](https://github.com/dakrone/cheshire):
 ```clojure
 (require '[cheshire.core :as json])
 
-(queue.utils/with-auto-message-decoder #(json/parse-string % true))
+(queue.utils/with-handler (queue.utils/with-auto-message-decoder #(json/parse-string % true)))
 ```
 
 ### Queue URL vs Queue Name
