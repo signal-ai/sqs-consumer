@@ -1,25 +1,23 @@
 (ns sqs-consumer.parallel
-  (:require [amazonica.aws.sqs :as sqs]
-            [com.climate.claypoole :as cp]
+  (:require [com.climate.claypoole :as cp]
             [sqs-consumer.core :as core]
-            [sqs-consumer.utils :as utils]
             [sqs-consumer.sequential :as sequential]))
+
+(set! *warn-on-reflection* true)
 
 (defn parallel-process [process-fn]
   (fn [{:keys [config messages]}]
     (cp/upmap
      (:thread-pool config)
-     (fn [message] (process-fn {:message-body (:body message)
-                                :delete-message #(sequential/delete-message config (:receipt-handle message))}))
+     (fn [message] (process-fn (sequential/extract-message config message)))
      messages)))
 
 (def with-auto-delete sequential/with-auto-delete)
 
-(def with-decoder sequential/with-decoder)
+(def with-error-handling sequential/with-error-handling)
 
-(def with-error-handling utils/with-error-handler)
-
-(defn create-consumer [& {:keys [threadpool-size process-fn] :or {threadpool-size 10} :as args}]
+(defn create-consumer [& {:keys [threadpool-size process-fn]
+                          :or {threadpool-size 10} :as args}]
   (let [thread-pool (cp/threadpool threadpool-size)
         consumer (core/create-consumer (merge args {:thread-pool thread-pool :process-fn (parallel-process process-fn)}))]
     (-> consumer

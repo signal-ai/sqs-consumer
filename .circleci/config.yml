@@ -8,11 +8,19 @@ jobs:
         type: boolean
         default: True
     docker:
-      - image: circleci/clojure:openjdk-11-lein
+      - image: cimg/clojure:1.10.1
         auth:
           # from org-global context
           username: $DOCKERHUB_USER
           password: $DOCKERHUB_PASS
+      - image: localstack/localstack:0.12.6
+        auth:
+          username: $DOCKERHUB_USER
+          password: $DOCKERHUB_PASS
+        environment:
+          DEFAULT_REGION: "eu-west-1"
+          SERVICES: "s3,sqs,sns"
+
     steps:
       - checkout
 
@@ -28,12 +36,42 @@ jobs:
               - ~/.m2
           key: v1-deps-lein-{{ checksum "project.clj" }}
 
-      - run: lein uberjar
+      - run:
+          name: Waiting for Localstack to be ready
+          command: |
+            for i in `seq 1 30`;
+            do
+              nc -z 127.0.0.1 4566 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for Localstack && exit 1
+
+      - run:
+          name: Run tests
+          command: |
+            lein test unit \
+              --no-capture-output \
+              --plugin cloverage \
+              --plugin kaocha.plugin/junit-xml \
+              --junit-xml-file test-results/clojure/results.xml
+
+      - store_test_results:
+          path: test-results
+
+      - store_artifacts:
+          path: target/coverage
+
+      - run:
+          name: Build jar
+          command: lein uberjar
 
       - when:
           condition: << parameters.publish >>
           steps:
-            - run: lein deploy
+            - run:
+                name: Deploy to clojars
+                command: lein deploy
 
 workflows:
   version: 2
@@ -55,6 +93,6 @@ workflows:
           filters:
             branches:
               only:
-                - master
                 - main
+                - master
           context: org-global
