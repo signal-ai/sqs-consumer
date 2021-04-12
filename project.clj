@@ -1,4 +1,4 @@
-(defproject signal-ai/sqs-consumer "0.2.1"
+(defproject com.signal-ai/sqs-consumer "0.2.1-SNAPSHOT"
   :description "Another SQS Library"
   :url "https://github.com/signal-ai/sqs-consumer"
   :license {:name "Eclipse Public License"
@@ -11,8 +11,8 @@
                                   [greenpowermonitor/test-doubles "0.1.2"]]}}
   :deploy-repositories [["releases" {:url "https://clojars.org/repo"
                                      :username :env/clojars_username
-                                     :password :env/clojars_password
+                                     :password :env/clojars_token
                                      :sign-releases false}]
                         ["snapshots" {:url "https://clojars.org/repo"
                                       :username :env/clojars_username
-                                      :password :env/clojars_password}]])
+                                      :password :env/clojars_token}]])

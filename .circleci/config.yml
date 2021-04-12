@@ -9,6 +9,10 @@ jobs:
         default: True
     docker:
       - image: circleci/clojure:openjdk-11-lein
+        auth:
+          # from org-global context
+          username: $DOCKERHUB_USER
+          password: $DOCKERHUB_PASS
     steps:
       - checkout
 
@@ -42,6 +46,8 @@ workflows:
             branches:
               ignore:
                 - master
+                - main
+          context: org-global
 
       - build:
           name: build_and_publish
@@ -50,3 +56,5 @@ workflows:
             branches:
               only:
                 - master
+                - main
+          context: org-global
