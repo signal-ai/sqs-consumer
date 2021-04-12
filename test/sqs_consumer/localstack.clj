@@ -10,15 +10,16 @@
                  :endpoint (format "http://%s:4566" localstack-host)
                  :client-config {}})
 
+(def ^:private localstack-retry-count (atom 0))
+
 (defn wait-for-localstack []
-  (let [localstack-url (format "http://%s:4566/health" localstack-host)
-        localstack-retry-count (atom 0)]
-    (log/infof "looking up localstack at %s" localstack-url)
+  (let [localstack-url (format "http://%s:4566/health" localstack-host)]
+    (log/infof "looking up localstack at %s, retry no: %s" localstack-url  @localstack-retry-count)
     (try
       (slurp localstack-url)
       (log/infof "localstack ready at %s" localstack-url)
       (catch Exception e
-        (if (>= @localstack-retry-count 20)
+        (if (>= @localstack-retry-count 10)
           (do
             (log/fatalf "retry limit reached waiting for localstack at %s, %s" localstack-url)
             (System/exit 1))

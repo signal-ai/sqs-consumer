@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+    - Add opentracing support, see `sqs-consumer.opentracing`
+
 ## 0.3.0
 
 ### Breaking

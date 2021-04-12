@@ -154,6 +154,34 @@ To use [cheshire](https://github.com/dakrone/cheshire):
 
 If you pass `queue-url` then `queue-name` will never be used. If you only pass `queue-name` then `queue-url` will be looked up; AWS will throw an exception if a Queue with that name cannot be found. If neither are passed then an `IllegalArgumentException` will be thrown.
 
+### Tracing
+
+To add tracing add `sqs-consumer.opentracing/with-tracing` to your `process-fn`. This requires the [opentracing-clj](https://github.com/alvinfrancis/opentracing-clj) library (with version > "0.2.2") on your classpath (this is not included).
+
+This function attempts to extract existing span context from upstream services. This context will be pulled from `:message-attributes` using the given key, assuming the `text` opentracing carrier format.
+
+If using an SNS message without `RawMessageDelivery` set to `true`, it must be placed _after_ the decoder, else the span context from the upstream service will not have yet been pulled from the message attributes.
+
+```clojure
+(require [sqs-consumer.parallel :as queue.parallel]
+         [sqs-consumer.opentracing :as queue.opentracing]
+         [sqs-consumer.utils :as queue.utils])
+
+:process-fn (-> process
+  (queue.opentracing/with-tracing :span-ctx) ;; replace span-ctx with the name of the attribute you propagate traces through on an SNS or SQS message attribute
+  (queue.parallel/with-decoder (queue.utils/auto-decode-json-message))
+  (queue.parallel/with-error-handling #(prn % "error processing messages")))
+```
+
+If using SNS with `RawMessageDelivery` set to `true` or raw SQS messages, `with-tracing` can be placed earlier in the process-fn order, i.e. before the decoder. This means errors in decoders will still be traced.
+
+```clojure
+:process-fn (-> process
+  (queue.parallel/with-decoder (queue.utils/decode-sqs-encoded-json))
+  (queue.opentracing/with-tracing :span-ctx)
+  (queue.parallel/with-error-handling #(prn % "error processing messages")))
+```
+
 ## TODO
 
 -   [ ] deps.edn?
