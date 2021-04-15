@@ -169,7 +169,7 @@ If using an SNS message without `RawMessageDelivery` set to `true`, it must be p
 
 :process-fn (-> process
   (queue.opentracing/with-tracing :span-ctx) ;; replace span-ctx with the name of the attribute you propagate traces through on an SNS or SQS message attribute
-  (queue.parallel/with-decoder (queue.utils/auto-decode-json-message))
+  (queue.utils/with-handler (queue.utils/with-auto-message-decoder))
   (queue.parallel/with-error-handling #(prn % "error processing messages")))
 ```
 
@@ -177,7 +177,7 @@ If using SNS with `RawMessageDelivery` set to `true` or raw SQS messages, `with-
 
 ```clojure
 :process-fn (-> process
-  (queue.parallel/with-decoder (queue.utils/decode-sqs-encoded-json))
+  (queue.utils/with-handler (queue.utils/with-auto-message-decoder))
   (queue.opentracing/with-tracing :span-ctx)
   (queue.parallel/with-error-handling #(prn % "error processing messages")))
 ```
