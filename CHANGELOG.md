@@ -68,7 +68,7 @@
         ...)
     ```
 
-2. Replace any usage of `queue.paralle/with-decoder` and `queue.sequential/with-decoder` with , either add a json decoder function fo choice or add `org.clojure/data.jso]` to your classpath
+2. Replace any usage of `queue.paralle/with-decoder` and `queue.sequential/with-decoder` with , either add a json decoder function of choice or add `org.clojure/data.json` to your classpath
 
     ```clojure
     :process-fn (-> process
